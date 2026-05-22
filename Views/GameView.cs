@@ -31,7 +31,9 @@ namespace FumoGame.Views
         private Texture2D? _leaderboardTexture;
         private Texture2D? _nyanTexture;
         private Texture2D  _bossTex     = null!;
+        private Texture2D  _bossTex2    = null!;
         private Texture2D  _bulletTex   = null!;
+        private int        _bossIndex   = 0;   // чередование боссов
         private Texture2D  _magnetTex   = null!;
         private float      _shakeTimer  = 0f;
         private float      _shakeAmount = 0f;
@@ -110,7 +112,8 @@ namespace FumoGame.Views
 
             _logoTexture  = TryLoadTexture("logo.png");
             _nyanTexture  = TryLoadTexture("nyan.png");
-            _bossTex      = TryLoadTexture("boss.png") ?? CreateCircleTexture(45, new Color(200, 30, 30));
+            _bossTex      = TryLoadTexture("boss.png")  ?? CreateCircleTexture(45, new Color(200, 30, 30));
+            _bossTex2     = TryLoadTexture("boss2.png") ?? _bossTex;
             _bulletTex    = CreateCircleTexture(7, new Color(255, 210, 0));
             _magnetTex    = TryLoadTexture("magnet.png") ?? CreateCircleTexture(14, new Color(255, 80, 180));
             _leaderboardTexture = TryLoadTexture("leaderboard.png");
@@ -203,6 +206,7 @@ namespace FumoGame.Views
             _model.Boss = null;
             _model.Bullets.Clear();
             _model.NextBossScore = 60;
+            _bossIndex = 0;
             _model.State = GameState.Playing;
         }
 
@@ -1013,6 +1017,7 @@ namespace FumoGame.Views
         private void SpawnBoss(int viewH)
         {
             int viewW = _graphicsDevice.Viewport.Width;
+            _bossIndex++;
             _model.Boss = new BossModel
             {
                 X             = viewW * 0.62f,
@@ -1024,6 +1029,8 @@ namespace FumoGame.Views
             };
             _model.Bullets.Clear();
         }
+
+        private Texture2D CurrentBossTex => _bossIndex % 2 == 1 ? _bossTex : _bossTex2;
 
         private void UpdateBoss(float dt, int viewH, bool isInvincible)
         {
@@ -1162,7 +1169,7 @@ namespace FumoGame.Views
             // Тело босса
             bool blink = boss.LifeTimer < 3f && (int)(boss.LifeTimer * 8) % 2 == 0;
             if (!blink)
-                _spriteBatch.Draw(_bossTex,
+                _spriteBatch.Draw(CurrentBossTex,
                     new Rectangle((int)boss.X, (int)boss.Y, boss.Width, boss.Height),
                     Color.White);
 

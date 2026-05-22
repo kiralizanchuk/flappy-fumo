@@ -29,6 +29,14 @@ namespace FumoGame.Views
         private Texture2D? _logoTexture;
         private Texture2D? _leaderboardTexture;
         private List<Texture2D> _gameOverFrames = new();
+
+        // --- Частицы ---
+        private struct Particle
+        {
+            public float X, Y, VX, VY, Life, MaxLife, Size;
+            public Color Color;
+        }
+        private readonly List<Particle> _particles = new();
         private Song? _music;
         private Song? _gameplayMusic;
         private GameState _prevMusicState = GameState.Playing;
@@ -159,6 +167,7 @@ namespace FumoGame.Views
             _model.InvincibilityTimer = 0f;
             _model.ShieldTimer = 0f;
             _model.SlowTimer = 0f;
+            _particles.Clear();
             _model.State = GameState.Playing;
         }
 
@@ -233,17 +242,25 @@ namespace FumoGame.Views
                 if (playerRect.Intersects(new Rectangle(coin.X, coin.Y, coin.Width, coin.Height)))
                 {
                     coin.Collected = true;
+                    Color particleColor = coin.Type switch
+                    {
+                        PowerUpType.Shield => Color.DeepSkyBlue,
+                        PowerUpType.Slow   => Color.LimeGreen,
+                        PowerUpType.Heart  => Color.HotPink,
+                        _                  => Color.Gold,
+                    };
+                    SpawnParticles(coin.X + coin.Width / 2, coin.Y + coin.Height / 2, particleColor);
                     switch (coin.Type)
                     {
                         case PowerUpType.Coin:   _model.Score += 3; break;
                         case PowerUpType.Shield: _model.ShieldTimer = ShieldDuration; break;
                         case PowerUpType.Slow:   _model.SlowTimer = SlowDuration; break;
-                        case PowerUpType.Heart:
-                            _model.Lives++;
-                            break;
+                        case PowerUpType.Heart:  _model.Lives++; break;
                     }
                 }
             }
+
+            UpdateParticles(dt);
 
             bool isInvincible = _model.GodMode || _model.InvincibilityTimer > 0 || _model.ShieldTimer > 0;
 
@@ -517,6 +534,8 @@ namespace FumoGame.Views
                     Color.DeepSkyBlue * 0.6f);
             }
 
+            DrawParticles();
+
             DrawTextCentered($"Счет: {_model.Score}", 20, Color.White, 1);
 
             // Сердечки (жизни) — правый верхний угол
@@ -761,6 +780,64 @@ namespace FumoGame.Views
                 float tx = coverX + (coverW2 - sz.X) / 2f;
                 float ty = rowCenterY - sz.Y / 2f;
                 _spriteBatch.DrawString(_font, txt, new Vector2(tx, ty), new Color(18, 36, 88));
+            }
+        }
+
+        // --- Частицы ---
+
+        private void SpawnParticles(int cx, int cy, Color color, int count = 14)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                float angle = (float)(Random.Shared.NextDouble() * Math.PI * 2);
+                float speed = 90f + (float)(Random.Shared.NextDouble() * 140f);
+                float life  = 0.30f + (float)(Random.Shared.NextDouble() * 0.25f);
+                float size  = 4f + (float)(Random.Shared.NextDouble() * 5f);
+                _particles.Add(new Particle
+                {
+                    X = cx, Y = cy,
+                    VX = MathF.Cos(angle) * speed,
+                    VY = MathF.Sin(angle) * speed - 40f, // лёгкий импульс вверх
+                    Life = life, MaxLife = life,
+                    Color = color, Size = size,
+                });
+            }
+        }
+
+        private void UpdateParticles(float dt)
+        {
+            const float ParticleGravity = 200f;
+            for (int i = _particles.Count - 1; i >= 0; i--)
+            {
+                var p = _particles[i];
+                p.X    += p.VX * dt;
+                p.Y    += p.VY * dt;
+                p.VY   += ParticleGravity * dt;
+                p.Life -= dt;
+                if (p.Life <= 0f)
+                    _particles.RemoveAt(i);
+                else
+                    _particles[i] = p;
+            }
+        }
+
+        private void DrawParticles()
+        {
+            foreach (var p in _particles)
+            {
+                float t    = p.Life / p.MaxLife;   // 1 = только родилась, 0 = умирает
+                float size = p.Size * t;
+                int   s    = Math.Max(1, (int)size);
+                int   px   = (int)(p.X - s * 0.5f);
+                int   py   = (int)(p.Y - s * 0.5f);
+
+                // Ядро искры (яркий цвет)
+                _spriteBatch.Draw(_pixelTexture, new Rectangle(px, py, s, s), p.Color * t);
+                // Свечение вокруг (больший квадрат, полупрозрачный)
+                int gs = s + 3;
+                _spriteBatch.Draw(_pixelTexture,
+                    new Rectangle(px - 1, py - 1, gs, gs),
+                    p.Color * (t * 0.35f));
             }
         }
 

@@ -34,6 +34,7 @@ namespace FumoGame.Views
         private Texture2D  _bossTex2    = null!;
         private Texture2D  _bossTex3    = null!;
         private Texture2D  _bossTex4    = null!;
+        private Texture2D  _bossTex5    = null!;
         private Texture2D  _bulletTex   = null!;
         private int        _bossIndex   = 0;   // чередование боссов
         private Texture2D  _magnetTex   = null!;
@@ -118,6 +119,7 @@ namespace FumoGame.Views
             _bossTex2     = TryLoadTexture("boss2.png") ?? _bossTex;
             _bossTex3     = TryLoadTexture("boss3.png") ?? _bossTex;
             _bossTex4     = TryLoadTexture("boss4.png") ?? _bossTex;
+            _bossTex5     = TryLoadTexture("boss5.png") ?? _bossTex;
             _bulletTex    = CreateCircleTexture(7, new Color(255, 210, 0));
             _magnetTex    = TryLoadTexture("magnet.png") ?? CreateCircleTexture(14, new Color(255, 80, 180));
             _leaderboardTexture = TryLoadTexture("leaderboard.png");
@@ -1034,11 +1036,12 @@ namespace FumoGame.Views
             _model.Bullets.Clear();
         }
 
-        private Texture2D CurrentBossTex => (_bossIndex % 4) switch
+        private Texture2D CurrentBossTex => (_bossIndex % 5) switch
         {
             1 => _bossTex4,
             2 => _bossTex2,
             3 => _bossTex3,
+            4 => _bossTex5,
             _ => _bossTex,
         };
 

@@ -701,16 +701,25 @@ namespace FumoGame.Views
 
             if (_font == null) return;
 
-            // Y-центры строк (скорректировано по скриншоту: все +0.075 от предыдущих значений)
-            float[] rowYFrac = { 0.305f, 0.442f, 0.578f, 0.714f, 0.850f };
+            // Строка 1 подтверждена по скриншоту = 0.305.
+            // Шаг между строками = 0.122 (не 0.137 как раньше — было слишком много).
+            float rowStart = 0.305f;
+            float rowStep  = 0.122f;
+            float[] rowYFrac = {
+                rowStart,
+                rowStart + rowStep,
+                rowStart + rowStep * 2,
+                rowStart + rowStep * 3,
+                rowStart + rowStep * 4,
+            };
 
-            // X: покрываем правую часть строки (где написано "000")
+            // X: перекрываем правую половину строки (где "000")
             float coverStartXFrac = 0.40f;
             float coverWFrac      = 0.52f;
-            float rowHFrac        = 0.130f;
+            float rowHFrac        = 0.155f;  // повыше, чтобы перекрыть буббли-шрифт
 
-            // Скрываем 6-ю лишнюю строку (AI нарисовал 6 строк вместо 5)
-            int r6CenterY = panelY + (int)(0.932f * panelH);
+            // Скрываем 6-ю лишнюю строку целиком (включая "5." и "000")
+            int r6CenterY = panelY + (int)((rowStart + rowStep * 5) * panelH);
             int r6H       = (int)(rowHFrac * panelH);
             _spriteBatch.Draw(_pixelTexture,
                 new Rectangle(panelX + (int)(0.09f * panelW), r6CenterY - r6H / 2,

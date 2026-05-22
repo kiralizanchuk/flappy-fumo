@@ -22,8 +22,9 @@ namespace FumoGame.Models
         public float InvincibilityTimer { get; set; } = 0f;
 
         // Активные бонусы
-        public float ShieldTimer { get; set; } = 0f;
-        public float SlowTimer { get; set; } = 0f;
+        public float ShieldTimer  { get; set; } = 0f;
+        public float SlowTimer    { get; set; } = 0f;
+        public float MagnetTimer  { get; set; } = 0f;
 
         // Таблица рекордов (топ-5)
         public List<int> TopScores { get; set; } = new();

@@ -30,8 +30,11 @@ namespace FumoGame.Views
         private Texture2D? _logoTexture;
         private Texture2D? _leaderboardTexture;
         private Texture2D? _nyanTexture;
-        private Texture2D  _bossTex   = null!;
-        private Texture2D  _bulletTex = null!;
+        private Texture2D  _bossTex     = null!;
+        private Texture2D  _bulletTex   = null!;
+        private Texture2D  _magnetTex   = null!;
+        private float      _shakeTimer  = 0f;
+        private float      _shakeAmount = 0f;
         private List<Texture2D> _gameOverFrames = new();
 
         // --- Частицы ---
@@ -69,6 +72,11 @@ namespace FumoGame.Views
         private const float BossSpeed         = 130f;
         private const float BulletSpeed       = 500f;
 
+        private const float MagnetDuration    = 6f;
+        private const float MagnetRadius      = 220f;
+        private const float ShakeMaxTime      = 0.35f;
+        private const float ShakeIntensityHit = 10f;
+
         private const int MaxGapShift = 180; // макс. вертикальный сдвиг зазора между трубами
         private int _lastGapCenter = 540;  // середина экрана 1080p
 
@@ -100,6 +108,7 @@ namespace FumoGame.Views
             _nyanTexture  = TryLoadTexture("nyan.png");
             _bossTex      = TryLoadTexture("boss.png") ?? CreateCircleTexture(45, new Color(200, 30, 30));
             _bulletTex    = CreateCircleTexture(7, new Color(255, 210, 0));
+            _magnetTex    = TryLoadTexture("magnet.png") ?? CreateCircleTexture(14, new Color(160, 32, 240));
             _leaderboardTexture = TryLoadTexture("leaderboard.png");
             _playerTexture = TryLoadTexture("player.png");
             _pipeTexture = TryLoadTexture("pipe.png") ?? CreatePipeTexture();
@@ -178,9 +187,11 @@ namespace FumoGame.Views
             _lastGapCenter = 540;
             _model.Lives = 3;
             _model.InvincibilityTimer = 0f;
-            _model.ShieldTimer = 0f;
-            _model.SlowTimer = 0f;
-            _shieldHitCooldown = 0f;
+            _model.ShieldTimer  = 0f;
+            _model.SlowTimer    = 0f;
+            _model.MagnetTimer  = 0f;
+            _shieldHitCooldown  = 0f;
+            _shakeTimer         = 0f;
             _particles.Clear();
             _model.Boss = null;
             _model.Bullets.Clear();
@@ -204,9 +215,11 @@ namespace FumoGame.Views
 
             // Обновляем таймеры
             if (_model.InvincibilityTimer > 0) _model.InvincibilityTimer -= dt;
-            if (_model.ShieldTimer > 0) _model.ShieldTimer -= dt;
-            if (_model.SlowTimer > 0) _model.SlowTimer -= dt;
-            if (_shieldHitCooldown > 0) _shieldHitCooldown -= dt;
+            if (_model.ShieldTimer > 0)        _model.ShieldTimer        -= dt;
+            if (_model.SlowTimer > 0)          _model.SlowTimer          -= dt;
+            if (_model.MagnetTimer > 0)        _model.MagnetTimer        -= dt;
+            if (_shieldHitCooldown > 0)        _shieldHitCooldown        -= dt;
+            if (_shakeTimer > 0)               _shakeTimer               -= dt;
 
             player.VelocityY += Gravity * dt;
             player.Y += (int)(player.VelocityY * dt);
@@ -265,6 +278,7 @@ namespace FumoGame.Views
                         PowerUpType.Shield => Color.HotPink,
                         PowerUpType.Slow   => Color.DeepSkyBlue,
                         PowerUpType.Heart  => Color.HotPink,
+                        PowerUpType.Magnet => Color.MediumPurple,
                         _                  => Color.LimeGreen,     // монетка — зелёные искры
                     };
                     SpawnParticles(coin.X + coin.Width / 2, coin.Y + coin.Height / 2, particleColor);
@@ -272,13 +286,35 @@ namespace FumoGame.Views
                     {
                         case PowerUpType.Coin:   _model.Score += 3; break;
                         case PowerUpType.Shield: _model.ShieldTimer = ShieldDuration; break;
-                        case PowerUpType.Slow:   _model.SlowTimer = SlowDuration; break;
+                        case PowerUpType.Slow:   _model.SlowTimer   = SlowDuration; break;
                         case PowerUpType.Heart:  _model.Lives++; break;
+                        case PowerUpType.Magnet: _model.MagnetTimer = MagnetDuration; break;
                     }
                 }
             }
 
             UpdateParticles(dt);
+
+            // Магнит: притягиваем монеты
+            if (_model.MagnetTimer > 0)
+            {
+                float px = player.X + player.Width  / 2f;
+                float py = player.Y + player.Height / 2f;
+                foreach (var coin in _model.Coins)
+                {
+                    if (coin.Collected) continue;
+                    float cx = coin.X + coin.Width  / 2f;
+                    float cy = coin.Y + coin.Height / 2f;
+                    float dx = px - cx, dy = py - cy;
+                    float dist = MathF.Sqrt(dx * dx + dy * dy);
+                    if (dist < MagnetRadius && dist > 1f)
+                    {
+                        float spd = 350f * (1f - dist / MagnetRadius) + 80f;
+                        coin.X += (int)(dx / dist * spd * dt);
+                        coin.Y += (int)(dy / dist * spd * dt);
+                    }
+                }
+            }
 
             // Босс: спавн и обновление
             if ((_model.Boss == null || !_model.Boss.Active) && _model.Score >= _model.NextBossScore)
@@ -319,6 +355,7 @@ namespace FumoGame.Views
                             return;
                         }
                         _model.InvincibilityTimer = InvincibilityDuration;
+                    TriggerShake();
                         break;
                     }
                 }
@@ -345,6 +382,7 @@ namespace FumoGame.Views
                     player.Y = player.StartY;
                     player.VelocityY = 0;
                     _model.InvincibilityTimer = InvincibilityDuration;
+                    TriggerShake();
                 }
             }
         }
@@ -372,7 +410,15 @@ namespace FumoGame.Views
             };
             _graphicsDevice.Clear(bgColor);
 
-            _spriteBatch.Begin();
+            Matrix shakeMatrix = Matrix.Identity;
+            if (_shakeTimer > 0)
+            {
+                float intensity = ShakeIntensityHit * (_shakeTimer / ShakeMaxTime);
+                float ox = (float)(Random.Shared.NextDouble() * 2 - 1) * intensity;
+                float oy = (float)(Random.Shared.NextDouble() * 2 - 1) * intensity;
+                shakeMatrix = Matrix.CreateTranslation(ox, oy, 0);
+            }
+            _spriteBatch.Begin(transformMatrix: shakeMatrix);
             switch (_model.State)
             {
                 case GameState.Menu: DrawMenu(); break;
@@ -395,19 +441,40 @@ namespace FumoGame.Views
                 Color.White);
         }
 
-        // --- Sky color by score ---
+        // --- Sky color by score (день → закат → ночь) ---
 
         private Color GetSkyColor()
         {
-            int phase = (_model.Score / 10) % 4;
-            return phase switch
+            var day    = new Color(100, 149, 237);  // cornflower blue
+            var sunset = new Color(255, 120, 50);   // оранжевый закат
+            var night  = new Color(8,   8,  45);    // тёмно-синяя ночь
+
+            if (_model.Score < 60)
             {
-                0 => Color.CornflowerBlue,
-                1 => new Color(255, 140, 60),
-                2 => new Color(15, 15, 60),
-                3 => new Color(55, 55, 65),
-                _ => Color.CornflowerBlue,
-            };
+                float t = _model.Score / 60f;
+                return LerpColor(day, sunset, t);
+            }
+            else if (_model.Score < 120)
+            {
+                float t = (_model.Score - 60) / 60f;
+                return LerpColor(sunset, night, t);
+            }
+            return night;
+        }
+
+        private static Color LerpColor(Color a, Color b, float t)
+        {
+            t = Math.Clamp(t, 0f, 1f);
+            return new Color(
+                (int)(a.R + (b.R - a.R) * t),
+                (int)(a.G + (b.G - a.G) * t),
+                (int)(a.B + (b.B - a.B) * t));
+        }
+
+        private void TriggerShake()
+        {
+            _shakeTimer  = ShakeMaxTime;
+            _shakeAmount = ShakeIntensityHit;
         }
 
         // --- Private helpers ---
@@ -429,9 +496,10 @@ namespace FumoGame.Views
 
             if (Random.Shared.Next(100) >= CoinSpawnChance) return;
             int roll = Random.Shared.Next(100);
-            PowerUpType type = roll < 70 ? PowerUpType.Coin
-                             : roll < 85 ? PowerUpType.Shield
-                             : PowerUpType.Slow;
+            PowerUpType type = roll < 65 ? PowerUpType.Coin
+                             : roll < 78 ? PowerUpType.Shield
+                             : roll < 90 ? PowerUpType.Slow
+                             :             PowerUpType.Magnet;
             _model.Coins.Add(new CoinModel(coinX, gapMid, type));
         }
 
@@ -545,6 +613,7 @@ namespace FumoGame.Views
                     PowerUpType.Shield => _shieldTexture,
                     PowerUpType.Slow   => _slowTexture,
                     PowerUpType.Heart  => _heartFullTexture,
+                    PowerUpType.Magnet => _magnetTex,
                     _                  => _coinTexture,
                 };
                 // Круговая синяя обводка для замедления
@@ -598,6 +667,22 @@ namespace FumoGame.Views
             DrawParticles();
             DrawBullets();
             DrawBoss(viewH);
+
+            // Магнит — пульсирующая фиолетовая аура
+            if (_model.MagnetTimer > 0)
+            {
+                float pulse = 0.5f + 0.3f * MathF.Sin((float)(_model.MagnetTimer * 8));
+                int ring = 12 + (int)(pulse * 6);
+                Color mc = Color.MediumPurple * (0.5f + pulse * 0.3f);
+                _spriteBatch.Draw(_pixelTexture,
+                    new Rectangle(player.X - ring, player.Y - ring, player.Width + ring * 2, ring), mc);
+                _spriteBatch.Draw(_pixelTexture,
+                    new Rectangle(player.X - ring, player.Y + player.Height, player.Width + ring * 2, ring), mc);
+                _spriteBatch.Draw(_pixelTexture,
+                    new Rectangle(player.X - ring, player.Y - ring, ring, player.Height + ring * 2), mc);
+                _spriteBatch.Draw(_pixelTexture,
+                    new Rectangle(player.X + player.Width, player.Y - ring, ring, player.Height + ring * 2), mc);
+            }
 
             DrawTextCentered($"Счет: {_model.Score}", 20, Color.White, 1);
 
@@ -654,6 +739,18 @@ namespace FumoGame.Views
                     new Rectangle(px - 4, py - 2, (int)sz.X + 8, (int)sz.Y + 4),
                     Color.DarkGreen * 0.8f);
                 _spriteBatch.DrawString(_font, txt, new Vector2(px, py), Color.LimeGreen);
+                row++;
+            }
+
+            if (_model.MagnetTimer > 0)
+            {
+                string txt = $"МАГНИТ {_model.MagnetTimer:F1}с";
+                var sz = _font.MeasureString(txt);
+                int py = viewH - lineH * (row + 1);
+                _spriteBatch.Draw(_pixelTexture,
+                    new Rectangle(px - 4, py - 2, (int)sz.X + 8, (int)sz.Y + 4),
+                    new Color(60, 0, 100) * 0.85f);
+                _spriteBatch.DrawString(_font, txt, new Vector2(px, py), Color.MediumPurple);
                 row++;
             }
         }
@@ -917,6 +1014,7 @@ namespace FumoGame.Views
                         return;
                     }
                     _model.InvincibilityTimer = InvincibilityDuration;
+                    TriggerShake();
                 }
             }
         }
@@ -975,6 +1073,7 @@ namespace FumoGame.Views
                         return;
                     }
                     _model.InvincibilityTimer = InvincibilityDuration;
+                    TriggerShake();
                 }
             }
         }

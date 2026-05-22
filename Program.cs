@@ -11,37 +11,24 @@ namespace FumoGame
     public class Game1 : Game
     {
         private readonly GraphicsDeviceManager _graphics;
-        private SpriteBatch _scaleBatch = null!;
-        private RenderTarget2D _renderTarget = null!;
         private GameModel _model = null!;
         private GameView _view = null!;
         private GameController _controller = null!;
-
-        // Игра всегда рендерится в 1080p, потом растягивается на экран
-        private const int GameWidth = 1920;
-        private const int GameHeight = 1080;
 
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-
-            var display = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
-            _graphics.PreferredBackBufferWidth = display.Width;
-            _graphics.PreferredBackBufferHeight = display.Height;
-            _graphics.HardwareModeSwitch = false; // borderless fullscreen, без смены разрешения монитора
+            _graphics.PreferredBackBufferWidth = 1920;
+            _graphics.PreferredBackBufferHeight = 1080;
             _graphics.IsFullScreen = true;
             _graphics.ApplyChanges();
         }
 
         protected override void Initialize()
         {
-            _renderTarget = new RenderTarget2D(GraphicsDevice, GameWidth, GameHeight);
-            _scaleBatch = new SpriteBatch(GraphicsDevice);
-
-            // PlayerModel всегда получает игровую высоту 1080, а не 4К
-            _model = new GameModel { Player = new PlayerModel(50, 300, GameHeight) };
+            _model = new GameModel { Player = new PlayerModel(50, 300, 1080) };
             _view = new GameView(_model, GraphicsDevice);
             _controller = new GameController(_model, _view);
             base.Initialize();
@@ -71,19 +58,7 @@ namespace FumoGame
 
         protected override void Draw(GameTime gameTime)
         {
-            // 1. Рисуем игру в render target (1920x1080)
-            GraphicsDevice.SetRenderTarget(_renderTarget);
             _view.Draw(gameTime);
-
-            // 2. Растягиваем render target на весь экран (4K или любое другое)
-            GraphicsDevice.SetRenderTarget(null);
-            GraphicsDevice.Clear(Color.Black);
-            int screenW = GraphicsDevice.PresentationParameters.BackBufferWidth;
-            int screenH = GraphicsDevice.PresentationParameters.BackBufferHeight;
-            _scaleBatch.Begin();
-            _scaleBatch.Draw(_renderTarget, new Rectangle(0, 0, screenW, screenH), Color.White);
-            _scaleBatch.End();
-
             base.Draw(gameTime);
         }
     }

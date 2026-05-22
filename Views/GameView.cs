@@ -108,7 +108,7 @@ namespace FumoGame.Views
             _nyanTexture  = TryLoadTexture("nyan.png");
             _bossTex      = TryLoadTexture("boss.png") ?? CreateCircleTexture(45, new Color(200, 30, 30));
             _bulletTex    = CreateCircleTexture(7, new Color(255, 210, 0));
-            _magnetTex    = TryLoadTexture("magnet.png") ?? CreateCircleTexture(14, new Color(160, 32, 240));
+            _magnetTex    = TryLoadTexture("magnet.png") ?? CreateCircleTexture(14, new Color(255, 80, 180));
             _leaderboardTexture = TryLoadTexture("leaderboard.png");
             _playerTexture = TryLoadTexture("player.png");
             _pipeTexture = TryLoadTexture("pipe.png") ?? CreatePipeTexture();
@@ -278,7 +278,7 @@ namespace FumoGame.Views
                         PowerUpType.Shield => Color.HotPink,
                         PowerUpType.Slow   => Color.DeepSkyBlue,
                         PowerUpType.Heart  => Color.HotPink,
-                        PowerUpType.Magnet => Color.MediumPurple,
+                        PowerUpType.Magnet => Color.HotPink,
                         _                  => Color.LimeGreen,     // монетка — зелёные искры
                     };
                     SpawnParticles(coin.X + coin.Width / 2, coin.Y + coin.Height / 2, particleColor);
@@ -484,22 +484,28 @@ namespace FumoGame.Views
             int gapMid = pipe.TopHeight + pipe.Gap / 2 - 22;
             int coinX  = pipe.X + pipe.Width / 2 - 22;
 
-            // Сердце — редкий бонус на СЛОЖНЫХ трубах:
-            // движущаяся труба ИЛИ зазор у края экрана (сложная траектория)
+            // Сердце — на сложных трубах
             bool isHard = pipe.Type == PipeType.Moving
                        || Math.Abs(_lastGapCenter - viewH / 2) > 220;
             if (isHard && Random.Shared.Next(100) < 18)
             {
                 _model.Coins.Add(new CoinModel(coinX, gapMid, PowerUpType.Heart));
-                return; // сердце вместо обычного бонуса
+                return;
+            }
+
+            // Магнит — принудительно перед скоплением труб (3+ труб на экране)
+            bool magnetPending = _model.Coins.Any(c => !c.Collected && c.Type == PowerUpType.Magnet);
+            if (_model.Pipes.Count >= 3 && !magnetPending && _model.MagnetTimer <= 0)
+            {
+                _model.Coins.Add(new CoinModel(coinX, viewH / 2 - 22, PowerUpType.Magnet));
+                return;
             }
 
             if (Random.Shared.Next(100) >= CoinSpawnChance) return;
             int roll = Random.Shared.Next(100);
-            PowerUpType type = roll < 65 ? PowerUpType.Coin
-                             : roll < 78 ? PowerUpType.Shield
-                             : roll < 90 ? PowerUpType.Slow
-                             :             PowerUpType.Magnet;
+            PowerUpType type = roll < 70 ? PowerUpType.Coin
+                             : roll < 84 ? PowerUpType.Shield
+                             :             PowerUpType.Slow;
             _model.Coins.Add(new CoinModel(coinX, gapMid, type));
         }
 
@@ -668,12 +674,12 @@ namespace FumoGame.Views
             DrawBullets();
             DrawBoss(viewH);
 
-            // Магнит — пульсирующая фиолетовая аура
+            // Магнит — пульсирующая розовая аура
             if (_model.MagnetTimer > 0)
             {
                 float pulse = 0.5f + 0.3f * MathF.Sin((float)(_model.MagnetTimer * 8));
                 int ring = 12 + (int)(pulse * 6);
-                Color mc = Color.MediumPurple * (0.5f + pulse * 0.3f);
+                Color mc = new Color(255, 80, 180) * (0.5f + pulse * 0.3f);
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(player.X - ring, player.Y - ring, player.Width + ring * 2, ring), mc);
                 _spriteBatch.Draw(_pixelTexture,
@@ -749,8 +755,8 @@ namespace FumoGame.Views
                 int py = viewH - lineH * (row + 1);
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(px - 4, py - 2, (int)sz.X + 8, (int)sz.Y + 4),
-                    new Color(60, 0, 100) * 0.85f);
-                _spriteBatch.DrawString(_font, txt, new Vector2(px, py), Color.MediumPurple);
+                    new Color(120, 0, 60) * 0.85f);
+                _spriteBatch.DrawString(_font, txt, new Vector2(px, py), new Color(255, 80, 180));
                 row++;
             }
         }

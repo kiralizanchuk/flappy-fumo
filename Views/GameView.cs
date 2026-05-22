@@ -481,15 +481,6 @@ namespace FumoGame.Views
                 };
                 _spriteBatch.Draw(tex, new Rectangle(coin.X, coin.Y, coin.Width, coin.Height), Color.White);
 
-                // Подпись только для щита
-                if (_font != null && coin.Type == PowerUpType.Shield)
-                {
-                    string label = "S";
-                    var sz = _font.MeasureString(label);
-                    _spriteBatch.DrawString(_font, label,
-                        new Vector2(coin.X + (coin.Width - sz.X) / 2, coin.Y + (coin.Height - sz.Y) / 2),
-                        Color.Black);
-                }
             }
 
             // Игрок (мигает при неуязвимости)

@@ -14,6 +14,18 @@ namespace FumoGame.Models
         public double AnimationFrameTime { get; set; }
         public PlayerModel Player { get; set; } = null!;
         public List<PipeModel> Pipes { get; set; } = new();
+        public List<CoinModel> Coins { get; set; } = new();
         public bool GodMode { get; set; }
+
+        // Жизни
+        public int Lives { get; set; } = 3;
+        public float InvincibilityTimer { get; set; } = 0f;
+
+        // Активные бонусы
+        public float ShieldTimer { get; set; } = 0f;
+        public float SlowTimer { get; set; } = 0f;
+
+        // Таблица рекордов (топ-5)
+        public List<int> TopScores { get; set; } = new();
     }
 }

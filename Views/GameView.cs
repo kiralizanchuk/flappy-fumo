@@ -393,7 +393,7 @@ namespace FumoGame.Views
             int w = _graphicsDevice.Viewport.Width;
 
             DrawTextCentered("FLAPPY FUMO", 80, Color.White, 2);
-            DrawTextCentered("ПРОБЕЛ или клик — начать игру", 200, Color.White, 1);
+            DrawTextCentered("ПРОБЕЛ или клик - начать игру", 200, Color.White, 1);
 
             // Таблица рекордов
             if (_model.TopScores.Count > 0 && _font != null)
@@ -588,7 +588,7 @@ namespace FumoGame.Views
 
             if (_model.ShieldTimer > 0)
             {
-                string txt = $"S ЩЩИТ {_model.ShieldTimer:F1}с";
+                string txt = $"S ЩИТ {_model.ShieldTimer:F1}с";
                 var sz = _font.MeasureString(txt);
                 py -= 4;
                 _spriteBatch.Draw(_pixelTexture,

@@ -27,6 +27,7 @@ namespace FumoGame.Views
         private Texture2D _heartFullTexture = null!;
         private Texture2D _heartEmptyTexture = null!;
         private Texture2D? _logoTexture;
+        private Texture2D? _leaderboardTexture;
         private List<Texture2D> _gameOverFrames = new();
         private Song? _music;
         private Song? _gameplayMusic;
@@ -78,6 +79,7 @@ namespace FumoGame.Views
             _slowTexture = TryLoadTexture("slow.png") ?? CreateCircleTexture(14, Color.LimeGreen);
 
             _logoTexture = TryLoadTexture("logo.png");
+            _leaderboardTexture = TryLoadTexture("leaderboard.png");
             _playerTexture = TryLoadTexture("player.png");
             _pipeTexture = TryLoadTexture("pipe.png") ?? CreatePipeTexture();
             _backgroundTexture = TryLoadTexture("background.png");
@@ -432,42 +434,7 @@ namespace FumoGame.Views
             DrawTextCentered("ПРОБЕЛ или клик - начать игру", h / 2 + 100, Color.White, 1);
 
             // --- Таблица рекордов справа ---
-            if (_font != null && (_model.TopScores.Count > 0 || _model.HighScore > 0))
-            {
-                var scores = _model.TopScores.Count > 0
-                    ? _model.TopScores
-                    : new List<int> { _model.HighScore };
-
-                string header = "ТОП 5";
-                var headerSize = _font.MeasureString(header);
-                var lines = scores.Select((s, i) => $"{i + 1}.  {s}").ToList();
-                float lineH = _font.MeasureString("0").Y;
-                float maxLineW = lines.Max(l => _font.MeasureString(l).X);
-
-                int panelW = (int)Math.Max(maxLineW, headerSize.X) + 40;
-                int panelH = (int)(lineH * (lines.Count + 1.5f)) + 24;
-                int panelX = w - panelW - 30;
-                int panelY = (h - panelH) / 2;
-
-                int border = 4;
-                _spriteBatch.Draw(_pixelTexture,
-                    new Rectangle(panelX - border, panelY - border, panelW + border * 2, panelH + border * 2),
-                    Color.CornflowerBlue);
-                _spriteBatch.Draw(_pixelTexture,
-                    new Rectangle(panelX, panelY, panelW, panelH),
-                    Color.MidnightBlue * 0.92f);
-
-                float hx = panelX + (panelW - headerSize.X) / 2;
-                _spriteBatch.DrawString(_font, header, new Vector2(hx, panelY + 10), Color.CornflowerBlue);
-
-                for (int i = 0; i < lines.Count; i++)
-                {
-                    var lineSize = _font.MeasureString(lines[i]);
-                    float lx = panelX + (panelW - lineSize.X) / 2;
-                    float ly = panelY + 10 + lineH * (i + 1.3f);
-                    _spriteBatch.DrawString(_font, lines[i], new Vector2(lx, ly), Color.White);
-                }
-            }
+            DrawLeaderboardPanel(w, h);
         }
 
         private void DrawGame()
@@ -694,6 +661,76 @@ namespace FumoGame.Views
 
             _spriteBatch.DrawString(_font, scoreLine, new Vector2(scoreX, scoreY), Color.White);
             _spriteBatch.DrawString(_font, spaceLine, new Vector2(spaceX, spaceY), Color.CornflowerBlue);
+        }
+
+        private void DrawLeaderboardPanel(int screenW, int screenH)
+        {
+            var scores = _model.TopScores;
+
+            if (_leaderboardTexture == null)
+            {
+                // Запасной вариант: нарисовать текстовую панель
+                if (_font == null || (scores.Count == 0 && _model.HighScore == 0)) return;
+                var fallback = scores.Count > 0 ? scores : new List<int> { _model.HighScore };
+                string header = "ТОП 5";
+                var headerSize = _font.MeasureString(header);
+                var lines = fallback.Select((s, i) => $"{i + 1}.  {s}").ToList();
+                float lhf = _font.MeasureString("0").Y;
+                float maxLW = lines.Max(l => _font.MeasureString(l).X);
+                int pW = (int)Math.Max(maxLW, headerSize.X) + 40;
+                int pH = (int)(lhf * (lines.Count + 1.5f)) + 24;
+                int pX = screenW - pW - 30, pY = (screenH - pH) / 2;
+                _spriteBatch.Draw(_pixelTexture, new Rectangle(pX - 4, pY - 4, pW + 8, pH + 8), Color.CornflowerBlue);
+                _spriteBatch.Draw(_pixelTexture, new Rectangle(pX, pY, pW, pH), Color.MidnightBlue * 0.92f);
+                _spriteBatch.DrawString(_font, header, new Vector2(pX + (pW - headerSize.X) / 2, pY + 10), Color.CornflowerBlue);
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    var ls = _font.MeasureString(lines[i]);
+                    _spriteBatch.DrawString(_font, lines[i], new Vector2(pX + (pW - ls.X) / 2, pY + 10 + lhf * (i + 1.3f)), Color.White);
+                }
+                return;
+            }
+
+            // Рисуем картинку TOP 5 справа
+            int panelH = Math.Min(580, screenH - 60);
+            int panelW = (int)((float)_leaderboardTexture.Width / _leaderboardTexture.Height * panelH);
+            int panelX = screenW - panelW - 40;
+            int panelY = (screenH - panelH) / 2;
+
+            _spriteBatch.Draw(_leaderboardTexture, new Rectangle(panelX, panelY, panelW, panelH), Color.White);
+
+            if (_font == null) return;
+
+            // Пропорциональные Y-центры строк (относительно высоты панели, по анализу изображения 1024x1536)
+            float[] rowYFrac = { 0.230f, 0.367f, 0.503f, 0.639f, 0.775f };
+
+            // X-позиция области с "000" (правая половина строки)
+            float coverStartXFrac = 0.44f;
+            float coverWFrac      = 0.45f;
+            float rowHFrac        = 0.108f;
+
+            for (int i = 0; i < 5; i++)
+            {
+                string txt = i < scores.Count ? scores[i].ToString() : "-";
+
+                int rowCenterY = panelY + (int)(rowYFrac[i] * panelH);
+                int coverX     = panelX + (int)(coverStartXFrac * panelW);
+                int coverW2    = (int)(coverWFrac * panelW);
+                int coverH     = (int)(rowHFrac * panelH);
+
+                // Перекрываем плейсхолдер "000" цветом строки
+                Color rowBg = i % 2 == 0
+                    ? new Color(246, 251, 255)
+                    : new Color(220, 234, 250);
+                _spriteBatch.Draw(_pixelTexture,
+                    new Rectangle(coverX, rowCenterY - coverH / 2, coverW2, coverH), rowBg);
+
+                // Рисуем реальное число
+                var sz = _font.MeasureString(txt);
+                float tx = coverX + (coverW2 - sz.X) / 2f;
+                float ty = rowCenterY - sz.Y / 2f;
+                _spriteBatch.DrawString(_font, txt, new Vector2(tx, ty), new Color(18, 36, 88));
+            }
         }
 
         private void DrawGodModeIndicator()

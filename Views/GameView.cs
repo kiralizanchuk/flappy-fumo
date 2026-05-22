@@ -250,7 +250,7 @@ namespace FumoGame.Views
                         PowerUpType.Shield => Color.HotPink,
                         PowerUpType.Slow   => Color.LimeGreen,
                         PowerUpType.Heart  => Color.HotPink,
-                        _                  => Color.DeepSkyBlue,   // монетка — синие искры
+                        _                  => Color.LimeGreen,     // монетка — зелёные искры
                     };
                     SpawnParticles(coin.X + coin.Width / 2, coin.Y + coin.Height / 2, particleColor);
                     switch (coin.Type)

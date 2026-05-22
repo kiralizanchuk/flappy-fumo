@@ -26,6 +26,7 @@ namespace FumoGame.Views
         private Texture2D _slowTexture = null!;
         private Texture2D _heartFullTexture = null!;
         private Texture2D _heartEmptyTexture = null!;
+        private Texture2D? _logoTexture;
         private List<Texture2D> _gameOverFrames = new();
         private Song? _music;
         private Song? _gameplayMusic;
@@ -76,6 +77,7 @@ namespace FumoGame.Views
             _shieldTexture = TryLoadTexture("shield.png") ?? CreateCircleTexture(14, Color.DeepSkyBlue);
             _slowTexture = TryLoadTexture("slow.png") ?? CreateCircleTexture(14, Color.LimeGreen);
 
+            _logoTexture = TryLoadTexture("logo.png");
             _playerTexture = TryLoadTexture("player.png");
             _pipeTexture = TryLoadTexture("pipe.png") ?? CreatePipeTexture();
             _backgroundTexture = TryLoadTexture("background.png");
@@ -410,50 +412,61 @@ namespace FumoGame.Views
         private void DrawMenu()
         {
             int w = _graphicsDevice.Viewport.Width;
+            int h = _graphicsDevice.Viewport.Height;
 
-            DrawTextCentered("FLAPPY FUMO", 80, Color.White, 2);
-            DrawTextCentered("ПРОБЕЛ или клик - начать игру", 200, Color.White, 1);
-
-            // Таблица рекордов
-            if (_model.TopScores.Count > 0 && _font != null)
+            // --- Лого по центру ---
+            if (_logoTexture != null)
             {
+                // Ширина логотипа — половина экрана, высота пропорционально
+                int logoW = w / 2;
+                int logoH = (int)((float)_logoTexture.Height / _logoTexture.Width * logoW);
+                int logoX = (w - logoW) / 2;
+                int logoY = h / 2 - logoH / 2 - 60;
+                _spriteBatch.Draw(_logoTexture, new Rectangle(logoX, logoY, logoW, logoH), Color.White);
+            }
+            else
+            {
+                DrawTextCentered("FLAPPY FUMO", 80, Color.White, 2);
+            }
+
+            DrawTextCentered("ПРОБЕЛ или клик - начать игру", h / 2 + 100, Color.White, 1);
+
+            // --- Таблица рекордов справа ---
+            if (_font != null && (_model.TopScores.Count > 0 || _model.HighScore > 0))
+            {
+                var scores = _model.TopScores.Count > 0
+                    ? _model.TopScores
+                    : new List<int> { _model.HighScore };
+
                 string header = "ТОП 5";
                 var headerSize = _font.MeasureString(header);
-
-                var lines = _model.TopScores
-                    .Select((s, i) => $"{i + 1}.  {s}")
-                    .ToList();
-
-                float maxLineW = lines.Max(l => _font.MeasureString(l).X);
+                var lines = scores.Select((s, i) => $"{i + 1}.  {s}").ToList();
                 float lineH = _font.MeasureString("0").Y;
+                float maxLineW = lines.Max(l => _font.MeasureString(l).X);
 
-                int panelW = (int)Math.Max(maxLineW, headerSize.X) + 60;
-                int panelH = (int)(lineH * (lines.Count + 1.5f)) + 30;
-                int panelX = (w - panelW) / 2;
-                int panelY = 260;
+                int panelW = (int)Math.Max(maxLineW, headerSize.X) + 40;
+                int panelH = (int)(lineH * (lines.Count + 1.5f)) + 24;
+                int panelX = w - panelW - 30;
+                int panelY = (h - panelH) / 2;
 
                 int border = 4;
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(panelX - border, panelY - border, panelW + border * 2, panelH + border * 2),
-                    Color.Gold);
+                    Color.CornflowerBlue);
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(panelX, panelY, panelW, panelH),
-                    Color.MidnightBlue);
+                    Color.MidnightBlue * 0.92f);
 
                 float hx = panelX + (panelW - headerSize.X) / 2;
-                _spriteBatch.DrawString(_font, header, new Vector2(hx, panelY + 12), Color.Gold);
+                _spriteBatch.DrawString(_font, header, new Vector2(hx, panelY + 10), Color.CornflowerBlue);
 
                 for (int i = 0; i < lines.Count; i++)
                 {
                     var lineSize = _font.MeasureString(lines[i]);
                     float lx = panelX + (panelW - lineSize.X) / 2;
-                    float ly = panelY + 12 + lineH * (i + 1.3f);
+                    float ly = panelY + 10 + lineH * (i + 1.3f);
                     _spriteBatch.DrawString(_font, lines[i], new Vector2(lx, ly), Color.White);
                 }
-            }
-            else
-            {
-                DrawTextCentered($"Лучший результат: {_model.HighScore}", 300, Color.Yellow, 1);
             }
         }
 

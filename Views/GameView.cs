@@ -1036,14 +1036,22 @@ namespace FumoGame.Views
             _model.Bullets.Clear();
         }
 
-        private Texture2D CurrentBossTex => (_bossIndex % 5) switch
+        private Texture2D CurrentBossTex
         {
-            1 => _bossTex4,
-            2 => _bossTex2,
-            3 => _bossTex3,
-            4 => _bossTex5,
-            _ => _bossTex,
-        };
+            get
+            {
+                int idx = Math.Min(_bossIndex, 6); // после 360 не циклится
+                return idx switch
+                {
+                    1 => _bossTex4,  // 60  — dog7
+                    2 => _bossTex2,  // 120 — котик с языком
+                    3 => _bossTex3,  // 180 — свинья
+                    4 => _bossTex5,  // 240 — фото
+                    5 => _bossTex5,  // 300 — (заглушка, заменить позже)
+                    _ => _bossTex,   // 360+ — котик в шляпе навсегда
+                };
+            }
+        }
 
         private void UpdateBoss(float dt, int viewH, bool isInvincible)
         {

@@ -342,8 +342,8 @@ namespace FumoGame.Views
         private void MaybeSpawnCoin(PipeModel pipe, int viewH)
         {
             if (Random.Shared.Next(100) >= CoinSpawnChance) return;
-            int gapMid = pipe.TopHeight + pipe.Gap / 2 - 14;
-            int coinX = pipe.X + pipe.Width / 2 - 14;
+            int gapMid = pipe.TopHeight + pipe.Gap / 2 - 22;
+            int coinX = pipe.X + pipe.Width / 2 - 22;
             int roll = Random.Shared.Next(100);
             PowerUpType type = roll < 70 ? PowerUpType.Coin
                              : roll < 85 ? PowerUpType.Shield

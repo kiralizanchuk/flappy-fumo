@@ -47,6 +47,9 @@ namespace FumoGame.Views
         private const float SlowFactor = 0.5f;
         private const int CoinSpawnChance = 65;
 
+        private const int MaxGapShift = 180; // макс. вертикальный сдвиг зазора между трубами
+        private int _lastGapCenter = 540;  // середина экрана 1080p
+
         private string _scoresPath = "";
 
         public GameView(GameModel model, GraphicsDevice graphicsDevice)
@@ -142,6 +145,7 @@ namespace FumoGame.Views
             _model.Coins.Clear();
             _model.Score = 0;
             _model.PipeSpawnTimer = 0;
+            _lastGapCenter = 540;
             _model.Lives = 3;
             _model.InvincibilityTimer = 0f;
             _model.ShieldTimer = 0f;
@@ -364,16 +368,26 @@ namespace FumoGame.Views
         {
             int roll = Random.Shared.Next(100);
 
-            if (roll < 50)
+            if (roll < 40)
             {
                 int margin = 120;
                 int movingMaxTop = viewH - MovingPipeGap - margin;
-                int topHeight = Random.Shared.Next(margin, Math.Max(margin + 1, movingMaxTop));
+                int half = MovingPipeGap / 2;
+                int minTop = Math.Max(margin, _lastGapCenter - half - MaxGapShift);
+                int maxTop = Math.Min(movingMaxTop, _lastGapCenter - half + MaxGapShift);
+                if (minTop >= maxTop) maxTop = minTop + 1;
+                int topHeight = Random.Shared.Next(minTop, maxTop);
+                _lastGapCenter = topHeight + half;
                 return new PipeModel(viewW, topHeight, MovingPipeGap, PipeType.Moving, MaxMovingPipeSpeed, margin, movingMaxTop);
             }
 
-            int maxTop = viewH - PipeGap - 50;
-            int normalTopHeight = Random.Shared.Next(50, Math.Max(51, maxTop));
+            int maxTopN = viewH - PipeGap - 50;
+            int halfN = PipeGap / 2;
+            int minTopN = Math.Max(50, _lastGapCenter - halfN - MaxGapShift);
+            int maxTopN2 = Math.Min(maxTopN, _lastGapCenter - halfN + MaxGapShift);
+            if (minTopN >= maxTopN2) maxTopN2 = minTopN + 1;
+            int normalTopHeight = Random.Shared.Next(minTopN, maxTopN2);
+            _lastGapCenter = normalTopHeight + halfN;
             return new PipeModel(viewW, normalTopHeight, PipeGap);
         }
 

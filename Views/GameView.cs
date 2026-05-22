@@ -675,7 +675,7 @@ namespace FumoGame.Views
             DrawRectBorder(btnRect, borderColor, 3);
             if (_font != null && unlocked)
             {
-                const int scale = 2;
+                const int scale = 1;
                 string label = "САУНДТРЕК";
                 var size = _font.MeasureString(label) * scale;
                 _spriteBatch.DrawString(_font, label,

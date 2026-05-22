@@ -239,7 +239,7 @@ namespace FumoGame.Views
                         case PowerUpType.Shield: _model.ShieldTimer = ShieldDuration; break;
                         case PowerUpType.Slow:   _model.SlowTimer = SlowDuration; break;
                         case PowerUpType.Heart:
-                            if (_model.Lives < 3) _model.Lives++;
+                            _model.Lives++;
                             break;
                     }
                 }
@@ -530,7 +530,8 @@ namespace FumoGame.Views
         {
             int heartSize = 40;
             int gap = 4;
-            int total = 3;
+            // минимум 3 слота, если жизней больше — показываем все
+            int total = Math.Max(3, _model.Lives);
             int startX = _graphicsDevice.Viewport.Width - (heartSize + gap) * total - 10;
             int startY = 10;
 

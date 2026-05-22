@@ -37,6 +37,7 @@ namespace FumoGame.Views
             public Color Color;
         }
         private readonly List<Particle> _particles = new();
+        private float _shieldHitCooldown = 0f;
         private Song? _music;
         private Song? _gameplayMusic;
         private GameState _prevMusicState = GameState.Playing;
@@ -167,6 +168,7 @@ namespace FumoGame.Views
             _model.InvincibilityTimer = 0f;
             _model.ShieldTimer = 0f;
             _model.SlowTimer = 0f;
+            _shieldHitCooldown = 0f;
             _particles.Clear();
             _model.State = GameState.Playing;
         }
@@ -189,6 +191,7 @@ namespace FumoGame.Views
             if (_model.InvincibilityTimer > 0) _model.InvincibilityTimer -= dt;
             if (_model.ShieldTimer > 0) _model.ShieldTimer -= dt;
             if (_model.SlowTimer > 0) _model.SlowTimer -= dt;
+            if (_shieldHitCooldown > 0) _shieldHitCooldown -= dt;
 
             player.VelocityY += Gravity * dt;
             player.Y += (int)(player.VelocityY * dt);
@@ -267,18 +270,33 @@ namespace FumoGame.Views
             // Столкновение с трубами
             foreach (var pipe in _model.Pipes)
             {
-                if (!isInvincible && CheckCollision(player, pipe, viewH))
+                if (CheckCollision(player, pipe, viewH))
                 {
-                    _model.Lives--;
-                    if (_model.Lives <= 0)
+                    if (_model.ShieldTimer > 0)
                     {
-                        if (_model.Score > _model.HighScore) _model.HighScore = _model.Score;
-                        SaveScore(_model.Score);
-                        _model.State = GameState.GameOver;
-                        return;
+                        // Щит поглощает удар — розовые частицы
+                        if (_shieldHitCooldown <= 0f)
+                        {
+                            SpawnParticles(
+                                player.X + player.Width / 2,
+                                player.Y + player.Height / 2,
+                                Color.HotPink, 22);
+                            _shieldHitCooldown = 0.4f;
+                        }
                     }
-                    _model.InvincibilityTimer = InvincibilityDuration;
-                    break;
+                    else if (!isInvincible)
+                    {
+                        _model.Lives--;
+                        if (_model.Lives <= 0)
+                        {
+                            if (_model.Score > _model.HighScore) _model.HighScore = _model.Score;
+                            SaveScore(_model.Score);
+                            _model.State = GameState.GameOver;
+                            return;
+                        }
+                        _model.InvincibilityTimer = InvincibilityDuration;
+                        break;
+                    }
                 }
 
                 if (!pipe.Scored && pipe.X + pipe.Width < player.X)

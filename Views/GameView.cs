@@ -184,7 +184,7 @@ namespace FumoGame.Views
             _particles.Clear();
             _model.Boss = null;
             _model.Bullets.Clear();
-            _model.NextBossScore = 40;
+            _model.NextBossScore = 60;
             _model.State = GameState.Playing;
         }
 

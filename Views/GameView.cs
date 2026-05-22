@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using FumoGame.Models;
 using System;
@@ -28,6 +29,7 @@ namespace FumoGame.Views
         private Texture2D _heartEmptyTexture = null!;
         private Texture2D? _logoTexture;
         private Texture2D? _leaderboardTexture;
+        private Texture2D? _nyanTexture;
         private List<Texture2D> _gameOverFrames = new();
 
         // --- Частицы ---
@@ -87,7 +89,8 @@ namespace FumoGame.Views
             _shieldTexture = TryLoadTexture("shield.png") ?? CreateCircleTexture(14, Color.HotPink);
             _slowTexture = TryLoadTexture("slow.png") ?? CreateCircleTexture(14, Color.LimeGreen);
 
-            _logoTexture = TryLoadTexture("logo.png");
+            _logoTexture  = TryLoadTexture("logo.png");
+            _nyanTexture  = TryLoadTexture("nyan.png");
             _leaderboardTexture = TryLoadTexture("leaderboard.png");
             _playerTexture = TryLoadTexture("player.png");
             _pipeTexture = TryLoadTexture("pipe.png") ?? CreatePipeTexture();
@@ -357,7 +360,18 @@ namespace FumoGame.Views
             }
             if (_model.GodMode)
                 DrawGodModeIndicator();
+            DrawNyanCursor();
             _spriteBatch.End();
+        }
+
+        private void DrawNyanCursor()
+        {
+            if (_nyanTexture == null) return;
+            var mouse = Mouse.GetState();
+            int size = 48;
+            _spriteBatch.Draw(_nyanTexture,
+                new Rectangle(mouse.X, mouse.Y, size, size),
+                Color.White);
         }
 
         // --- Sky color by score ---

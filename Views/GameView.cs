@@ -27,6 +27,8 @@ namespace FumoGame.Views
         private Texture2D _heartFullTexture = null!;
         private Texture2D _heartEmptyTexture = null!;
         private Texture2D? _logoTexture;
+        private Texture2D _bgNoiseTexture = null!;
+        private Texture2D _bgDotTexture = null!;
         private List<Texture2D> _gameOverFrames = new();
         private Song? _music;
         private Song? _gameplayMusic;
@@ -78,6 +80,8 @@ namespace FumoGame.Views
             _slowTexture = TryLoadTexture("slow.png") ?? CreateCircleTexture(14, Color.LimeGreen);
 
             _logoTexture = TryLoadTexture("logo.png");
+            _bgNoiseTexture = CreateNoiseTexture(256, 256, 28);
+            _bgDotTexture = CreateDotGridTexture(480, 270, 32, 3);
             _playerTexture = TryLoadTexture("player.png");
             _pipeTexture = TryLoadTexture("pipe.png") ?? CreatePipeTexture();
             _backgroundTexture = TryLoadTexture("background.png");
@@ -304,7 +308,7 @@ namespace FumoGame.Views
             {
                 GameState.GameOver => Color.White,
                 GameState.Playing => GetSkyColor(),
-                _ => Color.CornflowerBlue,
+                _ => new Color(195, 215, 242),   // светло-голубой как в логотипе
             };
             _graphicsDevice.Clear(bgColor);
 
@@ -414,6 +418,8 @@ namespace FumoGame.Views
             int w = _graphicsDevice.Viewport.Width;
             int h = _graphicsDevice.Viewport.Height;
 
+            DrawBackgroundOverlay(isMenu: true);
+
             // --- Лого по центру ---
             if (_logoTexture != null)
             {
@@ -429,7 +435,7 @@ namespace FumoGame.Views
                 DrawTextCentered("FLAPPY FUMO", 80, Color.White, 2);
             }
 
-            DrawTextCentered("ПРОБЕЛ или клик - начать игру", h / 2 + 100, Color.White, 1);
+            DrawTextCentered("ПРОБЕЛ или клик - начать игру", h / 2 + 100, new Color(28, 48, 100), 1);
 
             // --- Таблица рекордов справа ---
             if (_font != null && (_model.TopScores.Count > 0 || _model.HighScore > 0))
@@ -483,6 +489,8 @@ namespace FumoGame.Views
                 _spriteBatch.Draw(_backgroundTexture, Vector2.Zero, null, Color.White, 0, Vector2.Zero,
                     new Vector2(sx, sy), SpriteEffects.None, 0);
             }
+
+            DrawBackgroundOverlay(isMenu: false);
 
             foreach (var pipe in _model.Pipes)
                 DrawPipe(pipe, viewH);
@@ -787,6 +795,82 @@ namespace FumoGame.Views
                         for (int sx = 0; sx < scale; sx++)
                             data[(ly * scale + sy) * texW + (lx * scale + sx)] = c;
                 }
+
+            tex.SetData(data);
+            return tex;
+        }
+
+        // --- Фон: зерно + точки + виньет ---
+
+        private void DrawBackgroundOverlay(bool isMenu)
+        {
+            int vw = _graphicsDevice.Viewport.Width;
+            int vh = _graphicsDevice.Viewport.Height;
+
+            // Точечная сетка в стиле логотипа
+            float dotAlpha = isMenu ? 0.25f : 0.14f;
+            int dw = _bgDotTexture.Width, dh = _bgDotTexture.Height;
+            for (int ty = 0; ty < vh; ty += dh)
+                for (int tx = 0; tx < vw; tx += dw)
+                    _spriteBatch.Draw(_bgDotTexture, new Vector2(tx, ty), Color.White * dotAlpha);
+
+            // Зерно (рандомный шум)
+            int nw = _bgNoiseTexture.Width, nh = _bgNoiseTexture.Height;
+            for (int ty = 0; ty < vh; ty += nh)
+                for (int tx = 0; tx < vw; tx += nw)
+                    _spriteBatch.Draw(_bgNoiseTexture, new Vector2(tx, ty), Color.White);
+
+            // Виньет: тёмный градиент сверху (только в игре)
+            if (!isMenu)
+            {
+                int gradH = vh / 3;
+                int steps = 8;
+                for (int i = 0; i < steps; i++)
+                {
+                    float t = 1f - (float)i / steps;
+                    int sy = i * gradH / steps;
+                    int sh = Math.Max(1, gradH / steps);
+                    _spriteBatch.Draw(_pixelTexture,
+                        new Rectangle(0, sy, vw, sh),
+                        Color.Black * (0.22f * t * t));
+                }
+            }
+        }
+
+        private Texture2D CreateNoiseTexture(int w, int h, int maxAlpha)
+        {
+            var tex = new Texture2D(_graphicsDevice, w, h);
+            var data = new Color[w * h];
+            for (int i = 0; i < data.Length; i++)
+            {
+                int a = Random.Shared.Next(0, maxAlpha + 1);
+                bool bright = Random.Shared.Next(3) > 0; // 2/3 светлые, 1/3 тёмные
+                data[i] = bright
+                    ? new Color((byte)255, (byte)255, (byte)255, (byte)a)
+                    : new Color((byte)0,   (byte)0,   (byte)0,   (byte)(a / 2));
+            }
+            tex.SetData(data);
+            return tex;
+        }
+
+        private Texture2D CreateDotGridTexture(int w, int h, int spacing, int dotRadius)
+        {
+            var tex = new Texture2D(_graphicsDevice, w, h);
+            var data = new Color[w * h];
+            for (int i = 0; i < data.Length; i++) data[i] = Color.Transparent;
+
+            for (int gy = spacing / 2; gy < h; gy += spacing)
+                for (int gx = spacing / 2; gx < w; gx += spacing)
+                    for (int dy = -dotRadius; dy <= dotRadius; dy++)
+                        for (int dx = -dotRadius; dx <= dotRadius; dx++)
+                        {
+                            float d = MathF.Sqrt(dx * dx + dy * dy);
+                            if (d > dotRadius) continue;
+                            int px = gx + dx, py = gy + dy;
+                            if (px < 0 || px >= w || py < 0 || py >= h) continue;
+                            byte a = (byte)(210 * (1f - d / dotRadius));
+                            data[py * w + px] = new Color((byte)255, (byte)255, (byte)255, a);
+                        }
 
             tex.SetData(data);
             return tex;

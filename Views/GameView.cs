@@ -235,9 +235,12 @@ namespace FumoGame.Views
                     coin.Collected = true;
                     switch (coin.Type)
                     {
-                        case PowerUpType.Coin: _model.Score += 3; break;
+                        case PowerUpType.Coin:   _model.Score += 3; break;
                         case PowerUpType.Shield: _model.ShieldTimer = ShieldDuration; break;
-                        case PowerUpType.Slow: _model.SlowTimer = SlowDuration; break;
+                        case PowerUpType.Slow:   _model.SlowTimer = SlowDuration; break;
+                        case PowerUpType.Heart:
+                            if (_model.Lives < 3) _model.Lives++;
+                            break;
                     }
                 }
             }
@@ -341,9 +344,20 @@ namespace FumoGame.Views
 
         private void MaybeSpawnCoin(PipeModel pipe, int viewH)
         {
-            if (Random.Shared.Next(100) >= CoinSpawnChance) return;
             int gapMid = pipe.TopHeight + pipe.Gap / 2 - 22;
-            int coinX = pipe.X + pipe.Width / 2 - 22;
+            int coinX  = pipe.X + pipe.Width / 2 - 22;
+
+            // Сердце — редкий бонус на СЛОЖНЫХ трубах:
+            // движущаяся труба ИЛИ зазор у края экрана (сложная траектория)
+            bool isHard = pipe.Type == PipeType.Moving
+                       || Math.Abs(_lastGapCenter - viewH / 2) > 220;
+            if (isHard && Random.Shared.Next(100) < 18)
+            {
+                _model.Coins.Add(new CoinModel(coinX, gapMid, PowerUpType.Heart));
+                return; // сердце вместо обычного бонуса
+            }
+
+            if (Random.Shared.Next(100) >= CoinSpawnChance) return;
             int roll = Random.Shared.Next(100);
             PowerUpType type = roll < 70 ? PowerUpType.Coin
                              : roll < 85 ? PowerUpType.Shield
@@ -459,8 +473,9 @@ namespace FumoGame.Views
                 var tex = coin.Type switch
                 {
                     PowerUpType.Shield => _shieldTexture,
-                    PowerUpType.Slow => _slowTexture,
-                    _ => _coinTexture,
+                    PowerUpType.Slow   => _slowTexture,
+                    PowerUpType.Heart  => _heartFullTexture,
+                    _                  => _coinTexture,
                 };
                 _spriteBatch.Draw(tex, new Rectangle(coin.X, coin.Y, coin.Width, coin.Height), Color.White);
 

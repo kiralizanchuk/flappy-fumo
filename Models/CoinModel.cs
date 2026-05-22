@@ -1,6 +1,6 @@
 namespace FumoGame.Models
 {
-    public enum PowerUpType { Coin, Shield, Slow }
+    public enum PowerUpType { Coin, Shield, Slow, Heart }
 
     public class CoinModel
     {

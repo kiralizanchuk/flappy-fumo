@@ -69,8 +69,8 @@ namespace FumoGame.Views
             _pixelTexture = new Texture2D(_graphicsDevice, 1, 1);
             _pixelTexture.SetData(new[] { Color.White });
 
-            _heartFullTexture = CreateHeartTexture(32, Color.Red);
-            _heartEmptyTexture = CreateHeartTexture(32, new Color(70, 70, 70));
+            _heartFullTexture = CreateHeartTexture(40, Color.Red);
+            _heartEmptyTexture = CreateHeartTexture(40, new Color(80, 80, 80));
 
             _coinTexture = TryLoadTexture("coin.png") ?? CreateCircleTexture(14, Color.Gold);
             _shieldTexture = TryLoadTexture("shield.png") ?? CreateCircleTexture(14, Color.DeepSkyBlue);
@@ -535,7 +535,7 @@ namespace FumoGame.Views
 
         private void DrawHearts()
         {
-            int heartSize = 32;
+            int heartSize = 40;
             int gap = 8;
             int total = 3;
             int startX = _graphicsDevice.Viewport.Width - (heartSize + gap) * total - 10;
@@ -545,7 +545,7 @@ namespace FumoGame.Views
             {
                 int hx = startX + i * (heartSize + gap);
                 var tex = i < _model.Lives ? _heartFullTexture : _heartEmptyTexture;
-                _spriteBatch.Draw(tex, new Rectangle(hx, startY, heartSize, heartSize), Color.White);
+                _spriteBatch.Draw(tex, new Rectangle(hx, startY, tex.Width, tex.Height), Color.White);
             }
         }
 
@@ -735,23 +735,49 @@ namespace FumoGame.Views
             return tex;
         }
 
-        private Texture2D CreateHeartTexture(int size, Color color)
+        private Texture2D CreateHeartTexture(int displaySize, Color mainColor)
         {
-            var tex = new Texture2D(_graphicsDevice, size, size);
-            var data = new Color[size * size];
-            for (int py = 0; py < size; py++)
-            {
-                for (int px = 0; px < size; px++)
+            // Пиксельная карта сердца 10x9 (0=прозрачный, 1=чёрная обводка, 2=основной, 3=светлый блик)
+            byte[,] pat = {
+                {0,0,1,1,0,0,1,1,0,0},
+                {0,1,2,2,1,1,2,2,1,0},
+                {1,2,3,2,2,2,2,2,2,1},
+                {1,2,3,2,2,2,2,2,2,1},
+                {1,2,2,2,2,2,2,2,2,1},
+                {0,1,2,2,2,2,2,2,1,0},
+                {0,0,1,2,2,2,2,1,0,0},
+                {0,0,0,1,2,2,1,0,0,0},
+                {0,0,0,0,1,1,0,0,0,0},
+            };
+            int logW = 10, logH = 9;
+            int scale = Math.Max(1, displaySize / logW);
+            int texW = logW * scale;
+            int texH = logH * scale;
+
+            var border = Color.Black;
+            var highlight = new Color(
+                Math.Min(mainColor.R + 90, 255),
+                Math.Min(mainColor.G + 30, 255),
+                Math.Min(mainColor.B + 30, 255));
+
+            var tex = new Texture2D(_graphicsDevice, texW, texH);
+            var data = new Color[texW * texH];
+
+            for (int ly = 0; ly < logH; ly++)
+                for (int lx = 0; lx < logW; lx++)
                 {
-                    // Нормализуем в [-1.2, 1.2], y перевёрнут и сдвинут вниз
-                    float nx = ((float)px / size - 0.5f) * 2.4f;
-                    float ny = -((float)py / size - 0.55f) * 2.4f;
-                    // Уравнение сердца: (x²+y²-1)³ - x²y³ ≤ 0
-                    float v = nx * nx + ny * ny - 1f;
-                    bool inside = v * v * v - nx * nx * ny * ny * ny <= 0f;
-                    data[py * size + px] = inside ? color : Color.Transparent;
+                    Color c = pat[ly, lx] switch
+                    {
+                        1 => border,
+                        2 => mainColor,
+                        3 => highlight,
+                        _ => Color.Transparent,
+                    };
+                    for (int sy = 0; sy < scale; sy++)
+                        for (int sx = 0; sx < scale; sx++)
+                            data[(ly * scale + sy) * texW + (lx * scale + sx)] = c;
                 }
-            }
+
             tex.SetData(data);
             return tex;
         }

@@ -248,7 +248,7 @@ namespace FumoGame.Views
                     Color particleColor = coin.Type switch
                     {
                         PowerUpType.Shield => Color.HotPink,
-                        PowerUpType.Slow   => Color.LimeGreen,
+                        PowerUpType.Slow   => Color.DeepSkyBlue,
                         PowerUpType.Heart  => Color.HotPink,
                         _                  => Color.LimeGreen,     // монетка — зелёные искры
                     };
@@ -512,6 +512,16 @@ namespace FumoGame.Views
                     PowerUpType.Heart  => _heartFullTexture,
                     _                  => _coinTexture,
                 };
+                // Синяя обводка для замедления
+                if (coin.Type == PowerUpType.Slow)
+                {
+                    int b = 3;
+                    Color blue = Color.DeepSkyBlue * 0.85f;
+                    _spriteBatch.Draw(_pixelTexture, new Rectangle(coin.X - b, coin.Y - b, coin.Width + b * 2, b), blue);
+                    _spriteBatch.Draw(_pixelTexture, new Rectangle(coin.X - b, coin.Y + coin.Height, coin.Width + b * 2, b), blue);
+                    _spriteBatch.Draw(_pixelTexture, new Rectangle(coin.X - b, coin.Y - b, b, coin.Height + b * 2), blue);
+                    _spriteBatch.Draw(_pixelTexture, new Rectangle(coin.X + coin.Width, coin.Y - b, b, coin.Height + b * 2), blue);
+                }
                 _spriteBatch.Draw(tex, new Rectangle(coin.X, coin.Y, coin.Width, coin.Height), Color.White);
 
             }

@@ -55,6 +55,14 @@ namespace FumoGame.Views
         private Song? _gameplayMusic;
         private GameState _prevMusicState = GameState.Playing;
 
+        // Выбор музыки
+        private readonly (string Key, string Label)[] _musicTracks =
+        {
+            ("gameplay", "Gameplay"),
+            ("baka",     "Baka Mitai"),
+        };
+        private Song?[] _allSongs = Array.Empty<Song?>();
+
         private const float Gravity = 300f;
         private const float JumpPower = -200f;
         private const double FrameDuration = 0.08;
@@ -139,6 +147,12 @@ namespace FumoGame.Views
             try { _music = content.Load<Song>("baka"); } catch { }
             try { _gameplayMusic = content.Load<Song>("gameplay"); } catch { }
 
+            _allSongs = new Song?[_musicTracks.Length];
+            for (int i = 0; i < _musicTracks.Length; i++)
+            {
+                try { _allSongs[i] = content.Load<Song>(_musicTracks[i].Key); } catch { }
+            }
+
             _scoresPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scores.txt");
             LoadScores();
         }
@@ -147,10 +161,14 @@ namespace FumoGame.Views
 
         public void UpdateMusic()
         {
-            bool isGameOver = _model.State == GameState.GameOver;
-            bool wasGameOver = _prevMusicState == GameState.GameOver;
-            bool isPlaying = _model.State == GameState.Playing;
-            bool wasPlaying = _prevMusicState == GameState.Playing;
+            // MusicSelect считается как Menu для музыки
+            var effectiveState    = _model.State    == GameState.MusicSelect ? GameState.Menu : _model.State;
+            var effectivePrevState = _prevMusicState == GameState.MusicSelect ? GameState.Menu : _prevMusicState;
+
+            bool isGameOver  = effectiveState     == GameState.GameOver;
+            bool wasGameOver = effectivePrevState  == GameState.GameOver;
+            bool isPlaying   = effectiveState     == GameState.Playing;
+            bool wasPlaying  = effectivePrevState  == GameState.Playing;
 
             if (isGameOver && !wasGameOver)
             {
@@ -164,10 +182,12 @@ namespace FumoGame.Views
             else if (isPlaying && !wasPlaying)
             {
                 MediaPlayer.Stop();
-                if (_gameplayMusic != null)
+                int idx = Math.Clamp(_model.SelectedMusicTrack, 0, _allSongs.Length - 1);
+                var track = _allSongs[idx] ?? _gameplayMusic;
+                if (track != null)
                 {
                     MediaPlayer.IsRepeating = true;
-                    MediaPlayer.Play(_gameplayMusic);
+                    MediaPlayer.Play(track);
                 }
             }
             else if (!isGameOver && wasGameOver && !isPlaying)
@@ -398,6 +418,7 @@ namespace FumoGame.Views
                         {
                             if (_model.Score > _model.HighScore) _model.HighScore = _model.Score;
                             SaveScore(_model.Score);
+                            _model.DeathCount++;
                             _model.State = GameState.GameOver;
                             return;
                         }
@@ -451,9 +472,10 @@ namespace FumoGame.Views
         {
             Color bgColor = _model.State switch
             {
-                GameState.GameOver => Color.White,
-                GameState.Playing => GetSkyColor(),
-                _ => Color.CornflowerBlue,
+                GameState.GameOver    => Color.White,
+                GameState.Playing     => GetSkyColor(),
+                GameState.MusicSelect => new Color(15, 15, 35),
+                _                     => Color.CornflowerBlue,
             };
             _graphicsDevice.Clear(bgColor);
 
@@ -468,9 +490,10 @@ namespace FumoGame.Views
             _spriteBatch.Begin(transformMatrix: shakeMatrix);
             switch (_model.State)
             {
-                case GameState.Menu: DrawMenu(); break;
-                case GameState.Playing: DrawGame(); break;
-                case GameState.GameOver: DrawGameOver(); break;
+                case GameState.Menu:        DrawMenu();        break;
+                case GameState.Playing:     DrawGame();        break;
+                case GameState.GameOver:    DrawGameOver();    break;
+                case GameState.MusicSelect: DrawMusicSelect(); break;
             }
             if (_model.GodMode)
                 DrawGodModeIndicator();
@@ -628,7 +651,6 @@ namespace FumoGame.Views
             // --- Лого по центру ---
             if (_logoTexture != null)
             {
-                // Ширина логотипа — половина экрана, высота пропорционально
                 int logoW = w / 2;
                 int logoH = (int)((float)_logoTexture.Height / _logoTexture.Width * logoW);
                 int logoX = (w - logoW) / 2;
@@ -642,6 +664,108 @@ namespace FumoGame.Views
 
             DrawTextCentered("ПРОБЕЛ или клик - начать игру", h / 2 + 100, Color.White, 1);
 
+            // --- Кнопка выбора музыки ---
+            bool unlocked = _model.DeathCount >= 3;
+            var btnRect = GetMusicButtonRect();
+            var btnColor = unlocked ? new Color(60, 60, 120) : new Color(40, 40, 40);
+            var borderColor = unlocked ? new Color(120, 120, 255) : new Color(80, 80, 80);
+            DrawRect(btnRect, btnColor);
+            DrawRectBorder(btnRect, borderColor, 3);
+            if (_font != null)
+            {
+                string label = unlocked ? "МУЗЫКА" : "МУЗЫКА [3 смерти]";
+                var textColor = unlocked ? Color.White : new Color(100, 100, 100);
+                var size = _font.MeasureString(label);
+                _spriteBatch.DrawString(_font, label,
+                    new Vector2(btnRect.X + (btnRect.Width - size.X) / 2,
+                                btnRect.Y + (btnRect.Height - size.Y) / 2),
+                    textColor);
+            }
+        }
+
+        private Rectangle GetMusicButtonRect()
+        {
+            int w = _graphicsDevice.Viewport.Width;
+            int h = _graphicsDevice.Viewport.Height;
+            int btnW = 280; int btnH = 60;
+            return new Rectangle(w / 2 - btnW / 2, h / 2 + 180, btnW, btnH);
+        }
+
+        public void HandleMenuClick(int mx, int my)
+        {
+            if (_model.DeathCount >= 3 && GetMusicButtonRect().Contains(mx, my))
+            {
+                _model.State = GameState.MusicSelect;
+                return;
+            }
+            StartNewGame();
+        }
+
+        private void DrawMusicSelect()
+        {
+            int w = _graphicsDevice.Viewport.Width;
+            int h = _graphicsDevice.Viewport.Height;
+
+            DrawTextCentered("ВЫБОР МУЗЫКИ", h / 4, Color.White, 2);
+
+            int btnW = 400; int btnH = 70; int gap = 20;
+            int totalH = _musicTracks.Length * (btnH + gap) - gap;
+            int startY = h / 2 - totalH / 2;
+
+            for (int i = 0; i < _musicTracks.Length; i++)
+            {
+                var rect = new Rectangle(w / 2 - btnW / 2, startY + i * (btnH + gap), btnW, btnH);
+                bool selected = _model.SelectedMusicTrack == i;
+                var bg     = selected ? new Color(60, 120, 60)  : new Color(50, 50, 80);
+                var border = selected ? new Color(100, 255, 100) : new Color(100, 100, 180);
+                DrawRect(rect, bg);
+                DrawRectBorder(rect, border, 3);
+                if (_font != null)
+                {
+                    string label = (selected ? "▶ " : "   ") + _musicTracks[i].Label;
+                    var sz = _font.MeasureString(label);
+                    _spriteBatch.DrawString(_font, label,
+                        new Vector2(rect.X + (rect.Width - sz.X) / 2, rect.Y + (rect.Height - sz.Y) / 2),
+                        Color.White);
+                }
+            }
+
+            // Кнопка назад
+            var backRect = new Rectangle(w / 2 - 150, startY + _musicTracks.Length * (btnH + gap) + 30, 300, 55);
+            DrawRect(backRect, new Color(80, 40, 40));
+            DrawRectBorder(backRect, new Color(200, 80, 80), 3);
+            if (_font != null)
+            {
+                string back = "НАЗАД";
+                var sz = _font.MeasureString(back);
+                _spriteBatch.DrawString(_font, back,
+                    new Vector2(backRect.X + (backRect.Width - sz.X) / 2, backRect.Y + (backRect.Height - sz.Y) / 2),
+                    Color.White);
+            }
+        }
+
+        public void HandleMusicSelectClick(int mx, int my)
+        {
+            int w = _graphicsDevice.Viewport.Width;
+            int h = _graphicsDevice.Viewport.Height;
+            int btnW = 400; int btnH = 70; int gap = 20;
+            int totalH = _musicTracks.Length * (btnH + gap) - gap;
+            int startY = h / 2 - totalH / 2;
+
+            for (int i = 0; i < _musicTracks.Length; i++)
+            {
+                var rect = new Rectangle(w / 2 - btnW / 2, startY + i * (btnH + gap), btnW, btnH);
+                if (rect.Contains(mx, my))
+                {
+                    _model.SelectedMusicTrack = i;
+                    _model.State = GameState.Menu;
+                    return;
+                }
+            }
+
+            var backRect = new Rectangle(w / 2 - 150, startY + _musicTracks.Length * (btnH + gap) + 30, 300, 55);
+            if (backRect.Contains(mx, my))
+                _model.State = GameState.Menu;
         }
 
         private void DrawGame()
@@ -1304,6 +1428,17 @@ namespace FumoGame.Views
             float x = (_graphicsDevice.Viewport.Width - measure.X) / 2;
             _spriteBatch.DrawString(_font, text, new Vector2(x, y), color, 0,
                 Vector2.Zero, scale, SpriteEffects.None, 0);
+        }
+
+        private void DrawRect(Rectangle r, Color c)
+            => _spriteBatch.Draw(_pixelTexture, r, c);
+
+        private void DrawRectBorder(Rectangle r, Color c, int thickness)
+        {
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(r.X, r.Y, r.Width, thickness), c);
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(r.X, r.Bottom - thickness, r.Width, thickness), c);
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(r.X, r.Y, thickness, r.Height), c);
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(r.Right - thickness, r.Y, thickness, r.Height), c);
         }
 
         private Texture2D? TryLoadTexture(string filename)

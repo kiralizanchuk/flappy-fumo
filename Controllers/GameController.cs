@@ -52,13 +52,16 @@ namespace FumoGame.Controllers
             switch (_model.State)
             {
                 case GameState.Menu:
-                    if (actionJustPressed) _view.StartNewGame();
+                    if (actionJustPressed) _view.HandleMenuClick(mouse.X, mouse.Y);
                     break;
                 case GameState.Playing:
                     if (actionDown) _view.Jump();
                     break;
                 case GameState.GameOver:
                     if (actionJustPressed) _view.GoToMenu();
+                    break;
+                case GameState.MusicSelect:
+                    if (actionJustPressed) _view.HandleMusicSelectClick(mouse.X, mouse.Y);
                     break;
             }
 

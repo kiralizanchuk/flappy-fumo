@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace FumoGame.Models
 {
-    public enum GameState { Menu, Playing, GameOver }
+    public enum GameState { Menu, Playing, GameOver, MusicSelect }
 
     public class GameModel
     {
@@ -33,6 +33,10 @@ namespace FumoGame.Models
         public bool  DashRequested { get; set; }
         public float DashTimer     { get; set; }
         public float DashCooldown  { get; set; }
+
+        // Музыка
+        public int DeathCount          { get; set; } = 0;
+        public int SelectedMusicTrack  { get; set; } = 0;
 
         // Босс
         public BossModel?      Boss          { get; set; }

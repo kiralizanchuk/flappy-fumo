@@ -433,8 +433,6 @@ namespace FumoGame.Views
 
             DrawTextCentered("ПРОБЕЛ или клик - начать игру", h / 2 + 100, Color.White, 1);
 
-            // --- Таблица рекордов справа ---
-            DrawLeaderboardPanel(w, h);
         }
 
         private void DrawGame()

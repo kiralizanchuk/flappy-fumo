@@ -27,5 +27,10 @@ namespace FumoGame.Models
 
         // Таблица рекордов (топ-5)
         public List<int> TopScores { get; set; } = new();
+
+        // Босс
+        public BossModel?      Boss          { get; set; }
+        public List<BulletModel> Bullets     { get; set; } = new();
+        public int             NextBossScore { get; set; } = 10;
     }
 }

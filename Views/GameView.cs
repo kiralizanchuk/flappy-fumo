@@ -30,6 +30,8 @@ namespace FumoGame.Views
         private Texture2D? _logoTexture;
         private Texture2D? _leaderboardTexture;
         private Texture2D? _nyanTexture;
+        private Texture2D  _bossTex   = null!;
+        private Texture2D  _bulletTex = null!;
         private List<Texture2D> _gameOverFrames = new();
 
         // --- Частицы ---
@@ -60,7 +62,12 @@ namespace FumoGame.Views
         private const float ShieldDuration = 4f;
         private const float SlowDuration = 4f;
         private const float SlowFactor = 0.5f;
-        private const int CoinSpawnChance = 65;
+        private const int   CoinSpawnChance = 65;
+
+        private const float BossLifetime      = 20f;
+        private const float BossShootInterval = 1.5f;
+        private const float BossSpeed         = 130f;
+        private const float BulletSpeed       = 500f;
 
         private const int MaxGapShift = 180; // макс. вертикальный сдвиг зазора между трубами
         private int _lastGapCenter = 540;  // середина экрана 1080p
@@ -91,6 +98,8 @@ namespace FumoGame.Views
 
             _logoTexture  = TryLoadTexture("logo.png");
             _nyanTexture  = TryLoadTexture("nyan.png");
+            _bossTex      = TryLoadTexture("boss.png") ?? CreateCircleTexture(45, new Color(200, 30, 30));
+            _bulletTex    = CreateCircleTexture(7, new Color(255, 210, 0));
             _leaderboardTexture = TryLoadTexture("leaderboard.png");
             _playerTexture = TryLoadTexture("player.png");
             _pipeTexture = TryLoadTexture("pipe.png") ?? CreatePipeTexture();
@@ -173,6 +182,9 @@ namespace FumoGame.Views
             _model.SlowTimer = 0f;
             _shieldHitCooldown = 0f;
             _particles.Clear();
+            _model.Boss = null;
+            _model.Bullets.Clear();
+            _model.NextBossScore = 10;
             _model.State = GameState.Playing;
         }
 
@@ -268,7 +280,16 @@ namespace FumoGame.Views
 
             UpdateParticles(dt);
 
+            // Босс: спавн и обновление
+            if ((_model.Boss == null || !_model.Boss.Active) && _model.Score >= _model.NextBossScore)
+            {
+                SpawnBoss(viewH);
+                _model.NextBossScore += 10;
+            }
             bool isInvincible = _model.GodMode || _model.InvincibilityTimer > 0 || _model.ShieldTimer > 0;
+            if (_model.Boss?.Active == true)
+                UpdateBoss(dt, viewH, isInvincible);
+            UpdateBullets(dt, viewW, isInvincible);
 
             // Столкновение с трубами
             foreach (var pipe in _model.Pipes)
@@ -575,6 +596,8 @@ namespace FumoGame.Views
             }
 
             DrawParticles();
+            DrawBullets();
+            DrawBoss(viewH);
 
             DrawTextCentered($"Счет: {_model.Score}", 20, Color.White, 1);
 
@@ -820,6 +843,192 @@ namespace FumoGame.Views
                 float tx = coverX + (coverW2 - sz.X) / 2f;
                 float ty = rowCenterY - sz.Y / 2f;
                 _spriteBatch.DrawString(_font, txt, new Vector2(tx, ty), new Color(18, 36, 88));
+            }
+        }
+
+        // --- Босс ---
+
+        private void SpawnBoss(int viewH)
+        {
+            int viewW = _graphicsDevice.Viewport.Width;
+            _model.Boss = new BossModel
+            {
+                X             = viewW * 0.62f,
+                Y             = viewH / 2f - 45,
+                Active        = true,
+                LifeTimer     = BossLifetime,
+                ShootTimer    = 1.0f,
+                AnnounceTimer = 2.5f,
+            };
+            _model.Bullets.Clear();
+        }
+
+        private void UpdateBoss(float dt, int viewH, bool isInvincible)
+        {
+            var boss   = _model.Boss!;
+            var player = _model.Player;
+
+            boss.AnnounceTimer -= dt;
+            float slowMult = _model.SlowTimer > 0 ? SlowFactor : 1f;
+            boss.LifeTimer -= dt * slowMult;
+
+            if (boss.LifeTimer <= 0)
+            {
+                boss.Active = false;
+                _model.Bullets.Clear();
+                SpawnParticles((int)(boss.X + boss.Width / 2), (int)(boss.Y + boss.Height / 2),
+                               Color.OrangeRed, 30);
+                return;
+            }
+
+            // Следим за игроком по Y
+            float targetY = player.Y + player.Height / 2f - boss.Height / 2f;
+            float spd = BossSpeed * slowMult;
+            if (boss.Y < targetY) boss.Y = Math.Min(boss.Y + spd * dt, targetY);
+            else                  boss.Y = Math.Max(boss.Y - spd * dt, targetY);
+            boss.Y = Math.Clamp(boss.Y, 0, viewH - boss.Height);
+
+            // Стрельба
+            boss.ShootTimer -= dt * slowMult;
+            if (boss.ShootTimer <= 0)
+            {
+                boss.ShootTimer = BossShootInterval;
+                ShootAtPlayer(boss);
+            }
+
+            // Коллизия с игроком
+            var playerRect = new Rectangle(player.X + 4, player.Y + 4, player.Width - 8, player.Height - 8);
+            var bossRect   = new Rectangle((int)boss.X, (int)boss.Y, boss.Width, boss.Height);
+            if (playerRect.Intersects(bossRect))
+            {
+                if (_model.ShieldTimer > 0 && _shieldHitCooldown <= 0)
+                {
+                    SpawnParticles(player.X + player.Width / 2, player.Y + player.Height / 2, Color.HotPink, 22);
+                    _shieldHitCooldown = 0.4f;
+                }
+                else if (!isInvincible)
+                {
+                    _model.Lives--;
+                    if (_model.Lives <= 0)
+                    {
+                        if (_model.Score > _model.HighScore) _model.HighScore = _model.Score;
+                        SaveScore(_model.Score);
+                        _model.State = GameState.GameOver;
+                        return;
+                    }
+                    _model.InvincibilityTimer = InvincibilityDuration;
+                }
+            }
+        }
+
+        private void ShootAtPlayer(BossModel boss)
+        {
+            float bx = boss.X + boss.Width  / 2f;
+            float by = boss.Y + boss.Height / 2f;
+            float px = _model.Player.X + _model.Player.Width  / 2f;
+            float py = _model.Player.Y + _model.Player.Height / 2f;
+            float dx = px - bx; float dy = py - by;
+            float len = MathF.Sqrt(dx * dx + dy * dy);
+            if (len < 1) return;
+            _model.Bullets.Add(new BulletModel
+            {
+                X = bx, Y = by,
+                VX = dx / len * BulletSpeed,
+                VY = dy / len * BulletSpeed,
+            });
+        }
+
+        private void UpdateBullets(float dt, int viewW, bool isInvincible)
+        {
+            var player = _model.Player;
+            float slowMult = _model.SlowTimer > 0 ? SlowFactor : 1f;
+
+            for (int i = _model.Bullets.Count - 1; i >= 0; i--)
+            {
+                var b = _model.Bullets[i];
+                b.X += b.VX * dt * slowMult;
+                b.Y += b.VY * dt * slowMult;
+                _model.Bullets[i] = b;
+
+                if (b.X < -60 || b.X > viewW + 60 || b.Y < -60 || b.Y > _graphicsDevice.Viewport.Height + 60)
+                { _model.Bullets.RemoveAt(i); continue; }
+
+                var bRect = new Rectangle((int)(b.X - b.Size / 2), (int)(b.Y - b.Size / 2), b.Size, b.Size);
+                var pRect = new Rectangle(player.X + 4, player.Y + 4, player.Width - 8, player.Height - 8);
+                if (!bRect.Intersects(pRect)) continue;
+
+                if (_model.ShieldTimer > 0 && _shieldHitCooldown <= 0)
+                {
+                    _model.Bullets.RemoveAt(i);
+                    SpawnParticles(player.X + player.Width / 2, player.Y + player.Height / 2, Color.HotPink, 18);
+                    _shieldHitCooldown = 0.4f;
+                }
+                else if (!isInvincible)
+                {
+                    _model.Bullets.RemoveAt(i);
+                    _model.Lives--;
+                    if (_model.Lives <= 0)
+                    {
+                        if (_model.Score > _model.HighScore) _model.HighScore = _model.Score;
+                        SaveScore(_model.Score);
+                        _model.State = GameState.GameOver;
+                        return;
+                    }
+                    _model.InvincibilityTimer = InvincibilityDuration;
+                }
+            }
+        }
+
+        private void DrawBoss(int viewH)
+        {
+            var boss = _model.Boss;
+            if (boss == null || !boss.Active) return;
+
+            int viewW = _graphicsDevice.Viewport.Width;
+
+            // Пульсирующая красная рамка пока босс активен
+            float pulse = 0.55f + 0.3f * MathF.Sin((float)(boss.LifeTimer * 6));
+            int b2 = 6;
+            Color rimCol = Color.Crimson * pulse;
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(0, 0, viewW, b2), rimCol);
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(0, viewH - b2, viewW, b2), rimCol);
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(0, 0, b2, viewH), rimCol);
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(viewW - b2, 0, b2, viewH), rimCol);
+
+            // Тело босса
+            bool blink = boss.LifeTimer < 3f && (int)(boss.LifeTimer * 8) % 2 == 0;
+            if (!blink)
+                _spriteBatch.Draw(_bossTex,
+                    new Rectangle((int)boss.X, (int)boss.Y, boss.Width, boss.Height),
+                    Color.White);
+
+            // Таймер-бар сверху по центру
+            int barW = 220; int barH = 12;
+            int barX = viewW / 2 - barW / 2;
+            float frac = Math.Clamp(boss.LifeTimer / BossLifetime, 0, 1);
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(barX - 2, 6, barW + 4, barH + 4), Color.DarkRed);
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(barX, 8, (int)(barW * frac), barH), Color.OrangeRed);
+
+            // Анонс "BOSS!"
+            if (boss.AnnounceTimer > 0)
+            {
+                float alpha = Math.Clamp(boss.AnnounceTimer / 2.5f, 0, 1);
+                DrawTextCentered("! BOSS !", viewH / 2 - 50, Color.Red * alpha, 3);
+                DrawTextCentered("УКЛОНЯЙСЯ!", viewH / 2 + 20, Color.White * alpha, 1);
+            }
+        }
+
+        private void DrawBullets()
+        {
+            foreach (var b in _model.Bullets)
+            {
+                int s  = b.Size;
+                int bx = (int)(b.X - s / 2f);
+                int by = (int)(b.Y - s / 2f);
+                // Свечение
+                _spriteBatch.Draw(_bulletTex, new Rectangle(bx - 3, by - 3, s + 6, s + 6),
+                    new Color(255, 210, 0) * 0.4f);
+                _spriteBatch.Draw(_bulletTex, new Rectangle(bx, by, s, s), Color.White);
             }
         }
 

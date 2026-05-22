@@ -572,29 +572,32 @@ namespace FumoGame.Views
         {
             if (_font == null) return;
             int px = 10;
-            int py = _graphicsDevice.Viewport.Height - 12;
-
-            if (_model.SlowTimer > 0)
-            {
-                string txt = $"~ ЗАМЕДЛЕНИЕ {_model.SlowTimer:F1}с";
-                var sz = _font.MeasureString(txt);
-                py -= (int)sz.Y + 4;
-                _spriteBatch.Draw(_pixelTexture,
-                    new Rectangle(px - 4, py - 2, (int)sz.X + 8, (int)sz.Y + 4),
-                    Color.DarkGreen * 0.8f);
-                _spriteBatch.DrawString(_font, txt, new Vector2(px, py), Color.LimeGreen);
-                py -= (int)sz.Y + 4;
-            }
+            int viewH = _graphicsDevice.Viewport.Height;
+            int lineH = (int)_font.MeasureString("A").Y + 6;
+            int row = 0;
 
             if (_model.ShieldTimer > 0)
             {
-                string txt = $"S ЩИТ {_model.ShieldTimer:F1}с";
+                string txt = $"ЩИТ {_model.ShieldTimer:F1}с";
                 var sz = _font.MeasureString(txt);
-                py -= 4;
+                int py = viewH - lineH * (row + 1);
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(px - 4, py - 2, (int)sz.X + 8, (int)sz.Y + 4),
                     Color.DarkBlue * 0.8f);
                 _spriteBatch.DrawString(_font, txt, new Vector2(px, py), Color.DeepSkyBlue);
+                row++;
+            }
+
+            if (_model.SlowTimer > 0)
+            {
+                string txt = $"ЗАМЕДЛЕНИЕ {_model.SlowTimer:F1}с";
+                var sz = _font.MeasureString(txt);
+                int py = viewH - lineH * (row + 1);
+                _spriteBatch.Draw(_pixelTexture,
+                    new Rectangle(px - 4, py - 2, (int)sz.X + 8, (int)sz.Y + 4),
+                    Color.DarkGreen * 0.8f);
+                _spriteBatch.DrawString(_font, txt, new Vector2(px, py), Color.LimeGreen);
+                row++;
             }
         }
 

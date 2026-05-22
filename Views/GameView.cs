@@ -536,7 +536,7 @@ namespace FumoGame.Views
         private void DrawHearts()
         {
             int heartSize = 40;
-            int gap = 8;
+            int gap = 4;
             int total = 3;
             int startX = _graphicsDevice.Viewport.Width - (heartSize + gap) * total - 10;
             int startY = 10;

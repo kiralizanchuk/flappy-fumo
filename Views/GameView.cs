@@ -493,10 +493,14 @@ namespace FumoGame.Views
                 return;
             }
 
-            // Магнит — принудительно перед скоплением труб (3+ труб на экране)
+            // Магнит + Щит перед скоплением труб (3+ труб на экране)
             bool magnetPending = _model.Coins.Any(c => !c.Collected && c.Type == PowerUpType.Magnet);
+            bool shieldPending = _model.Coins.Any(c => !c.Collected && c.Type == PowerUpType.Shield);
             if (_model.Pipes.Count >= 3 && !magnetPending && _model.MagnetTimer <= 0)
             {
+                // Щит чуть левее (игрок встретит его первым, потом магнит, потом трубы)
+                if (!shieldPending && _model.ShieldTimer <= 0)
+                    _model.Coins.Add(new CoinModel(coinX - 180, viewH / 2 - 22, PowerUpType.Shield));
                 _model.Coins.Add(new CoinModel(coinX, viewH / 2 - 22, PowerUpType.Magnet));
                 return;
             }

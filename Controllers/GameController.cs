@@ -11,6 +11,11 @@ namespace FumoGame.Controllers
         private KeyboardState _prev;
         private bool _prevMouseDown;
 
+        // Двойной клик для рывка
+        private int _dblClickCount  = 0;
+        private int _dblClickFrames = 0;
+        private const int DblClickWindow = 18; // ~0.3с при 60 fps
+
         public GameController(GameModel model, GameView view)
         {
             _model = model;
@@ -19,11 +24,30 @@ namespace FumoGame.Controllers
 
         public void HandleInput(KeyboardState kb, MouseState mouse)
         {
-            bool actionDown = kb.IsKeyDown(Keys.Space) || mouse.LeftButton == ButtonState.Pressed;
+            bool actionDown        = kb.IsKeyDown(Keys.Space) || mouse.LeftButton == ButtonState.Pressed;
             bool actionJustPressed = actionDown && !_prevMouseDown;
 
             if (kb.IsKeyDown(Keys.Tab) && !_prev.IsKeyDown(Keys.Tab))
                 _model.GodMode = !_model.GodMode;
+
+            // Счётчик двойного клика
+            _dblClickFrames++;
+            if (_dblClickFrames > DblClickWindow)
+            {
+                _dblClickCount  = 0;
+                _dblClickFrames = 0;
+            }
+            if (actionJustPressed)
+            {
+                _dblClickCount++;
+                _dblClickFrames = 0;
+                if (_dblClickCount >= 2 && _model.State == GameState.Playing)
+                {
+                    _model.DashRequested = true;
+                    _dblClickCount  = 0;
+                    _dblClickFrames = 0;
+                }
+            }
 
             switch (_model.State)
             {

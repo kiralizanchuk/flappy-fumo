@@ -77,6 +77,10 @@ namespace FumoGame.Views
         private const float ShakeMaxTime      = 0.35f;
         private const float ShakeIntensityHit = 10f;
 
+        private const float DashDuration      = 0.35f;
+        private const float DashCooldownTime  = 2.0f;
+        private const int   DashDistance      = 200;
+
         private const int MaxGapShift = 180; // макс. вертикальный сдвиг зазора между трубами
         private int _lastGapCenter = 540;  // середина экрана 1080p
 
@@ -189,9 +193,12 @@ namespace FumoGame.Views
             _model.InvincibilityTimer = 0f;
             _model.ShieldTimer  = 0f;
             _model.SlowTimer    = 0f;
-            _model.MagnetTimer  = 0f;
-            _shieldHitCooldown  = 0f;
-            _shakeTimer         = 0f;
+            _model.MagnetTimer   = 0f;
+            _model.DashTimer     = 0f;
+            _model.DashCooldown  = 0f;
+            _model.DashRequested = false;
+            _shieldHitCooldown   = 0f;
+            _shakeTimer          = 0f;
             _particles.Clear();
             _model.Boss = null;
             _model.Bullets.Clear();
@@ -218,8 +225,35 @@ namespace FumoGame.Views
             if (_model.ShieldTimer > 0)        _model.ShieldTimer        -= dt;
             if (_model.SlowTimer > 0)          _model.SlowTimer          -= dt;
             if (_model.MagnetTimer > 0)        _model.MagnetTimer        -= dt;
+            if (_model.DashCooldown > 0)       _model.DashCooldown       -= dt;
             if (_shieldHitCooldown > 0)        _shieldHitCooldown        -= dt;
             if (_shakeTimer > 0)               _shakeTimer               -= dt;
+
+            // Рывок — старт
+            if (_model.DashRequested && _model.DashCooldown <= 0)
+            {
+                _model.DashRequested = false;
+                _model.DashTimer     = DashDuration;
+                _model.DashCooldown  = DashCooldownTime;
+                SpawnParticles(player.X + player.Width / 2, player.Y + player.Height / 2,
+                               Color.Cyan, 10);
+            }
+            _model.DashRequested = false; // сбросить если кулдаун ещё идёт
+
+            // Рывок — движение по синусоиде вперёд и назад
+            if (_model.DashTimer > 0)
+            {
+                _model.DashTimer -= dt;
+                float progress = 1f - (_model.DashTimer / DashDuration);
+                float curve    = MathF.Sin(progress * MathF.PI); // 0→1→0
+                player.X = player.StartX + (int)(curve * DashDistance);
+                if (_model.DashTimer <= 0)
+                    player.X = player.StartX;
+                // Шлейф частиц
+                if (Random.Shared.Next(3) == 0)
+                    SpawnParticles(player.X, player.Y + player.Height / 2,
+                                   Color.Cyan * 0.7f, 3);
+            }
 
             player.VelocityY += Gravity * dt;
             player.Y += (int)(player.VelocityY * dt);
@@ -322,7 +356,8 @@ namespace FumoGame.Views
                 SpawnBoss(viewH);
                 _model.NextBossScore += 60;
             }
-            bool isInvincible = _model.GodMode || _model.InvincibilityTimer > 0 || _model.ShieldTimer > 0;
+            bool isInvincible = _model.GodMode || _model.InvincibilityTimer > 0
+                             || _model.ShieldTimer > 0 || _model.DashTimer > 0;
             if (_model.Boss?.Active == true)
                 UpdateBoss(dt, viewH, isInvincible);
             UpdateBullets(dt, viewW, isInvincible);
@@ -762,6 +797,26 @@ namespace FumoGame.Views
                     new Color(120, 0, 60) * 0.85f);
                 _spriteBatch.DrawString(_font, txt, new Vector2(px, py), new Color(255, 80, 180));
                 row++;
+            }
+
+            // Рывок: иконка внизу по центру
+            {
+                bool dashing  = _model.DashTimer > 0;
+                bool ready    = _model.DashCooldown <= 0;
+                float cdFrac  = ready ? 1f : 1f - (_model.DashCooldown / DashCooldownTime);
+                string label  = dashing ? "РЫВОК!" : ready ? "РЫВОК [2×клик]" : $"рывок {_model.DashCooldown:F1}с";
+                Color  col    = dashing ? Color.Cyan : ready ? Color.Cyan * 0.9f : Color.Gray * 0.7f;
+                var sz2       = _font.MeasureString(label);
+                int vw        = _graphicsDevice.Viewport.Width;
+                int ix        = vw / 2 - (int)sz2.X / 2;
+                int iy        = viewH - lineH - 6;
+                // Кулдаун-бар под текстом
+                int barW2 = 120; int barH2 = 4;
+                int barX2 = vw / 2 - barW2 / 2;
+                _spriteBatch.Draw(_pixelTexture, new Rectangle(barX2, iy + lineH, barW2, barH2), Color.DarkSlateGray);
+                _spriteBatch.Draw(_pixelTexture, new Rectangle(barX2, iy + lineH, (int)(barW2 * cdFrac), barH2),
+                    dashing ? Color.Cyan : Color.SteelBlue);
+                _spriteBatch.DrawString(_font, label, new Vector2(ix, iy), col);
             }
         }
 

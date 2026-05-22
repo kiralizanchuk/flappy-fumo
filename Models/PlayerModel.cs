@@ -7,14 +7,14 @@ namespace FumoGame.Models
         public int Width { get; } = 80;
         public int Height { get; } = 80;
         public float VelocityY { get; set; }
+        public int StartX { get; }
         public int StartY { get; }
         public int ScreenHeight { get; }
 
         public PlayerModel(int x, int y, int screenHeight)
         {
-            X = x;
-            Y = y;
-            StartY = y;
+            X = x; StartX = x;
+            Y = y; StartY = y;
             ScreenHeight = screenHeight;
         }
     }

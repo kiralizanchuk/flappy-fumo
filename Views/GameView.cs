@@ -656,7 +656,7 @@ namespace FumoGame.Views
             int h = _graphicsDevice.Viewport.Height;
 
             string scoreLine = $"Счет: {_model.Score}      Рекорд: {_model.HighScore}";
-            string spaceLine = "Нажмите ПРОБЕЛ чтобы вернуться в меню";
+            string spaceLine = "ПРОБЕЛ или клик - вернуться в меню";
 
             var scoreSize = _font.MeasureString(scoreLine);
             var spaceSize = _font.MeasureString(spaceLine);

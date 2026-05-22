@@ -804,7 +804,7 @@ namespace FumoGame.Views
                 bool dashing  = _model.DashTimer > 0;
                 bool ready    = _model.DashCooldown <= 0;
                 float cdFrac  = ready ? 1f : 1f - (_model.DashCooldown / DashCooldownTime);
-                string label  = dashing ? "РЫВОК!" : ready ? "РЫВОК [2×клик]" : $"рывок {_model.DashCooldown:F1}с";
+                string label  = dashing ? "РЫВОК!" : ready ? "РЫВОК [2 клика]" : $"рывок {_model.DashCooldown:F1}с";
                 Color  col    = dashing ? Color.Cyan : ready ? Color.Cyan * 0.9f : Color.Gray * 0.7f;
                 var sz2       = _font.MeasureString(label);
                 int vw        = _graphicsDevice.Viewport.Width;

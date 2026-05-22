@@ -83,7 +83,7 @@ namespace FumoGame.Views
             _heartEmptyTexture = CreateHeartTexture(40, new Color(80, 80, 80));
 
             _coinTexture = TryLoadTexture("coin.png") ?? CreateCircleTexture(14, Color.Gold);
-            _shieldTexture = TryLoadTexture("shield.png") ?? CreateCircleTexture(14, Color.DeepSkyBlue);
+            _shieldTexture = TryLoadTexture("shield.png") ?? CreateCircleTexture(14, Color.HotPink);
             _slowTexture = TryLoadTexture("slow.png") ?? CreateCircleTexture(14, Color.LimeGreen);
 
             _logoTexture = TryLoadTexture("logo.png");
@@ -244,10 +244,10 @@ namespace FumoGame.Views
                     coin.Collected = true;
                     Color particleColor = coin.Type switch
                     {
-                        PowerUpType.Shield => Color.DeepSkyBlue,
+                        PowerUpType.Shield => Color.HotPink,
                         PowerUpType.Slow   => Color.LimeGreen,
                         PowerUpType.Heart  => Color.HotPink,
-                        _                  => Color.Gold,
+                        _                  => Color.DeepSkyBlue,   // монетка — синие искры
                     };
                     SpawnParticles(coin.X + coin.Width / 2, coin.Y + coin.Height / 2, particleColor);
                     switch (coin.Type)
@@ -516,22 +516,22 @@ namespace FumoGame.Views
                 }
             }
 
-            // Щит — синяя аура вокруг игрока
+            // Щит — розовая аура вокруг игрока
             if (_model.ShieldTimer > 0)
             {
                 int aura = 8;
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(player.X - aura, player.Y - aura, player.Width + aura * 2, aura),
-                    Color.DeepSkyBlue * 0.6f);
+                    Color.HotPink * 0.7f);
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(player.X - aura, player.Y + player.Height, player.Width + aura * 2, aura),
-                    Color.DeepSkyBlue * 0.6f);
+                    Color.HotPink * 0.7f);
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(player.X - aura, player.Y - aura, aura, player.Height + aura * 2),
-                    Color.DeepSkyBlue * 0.6f);
+                    Color.HotPink * 0.7f);
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(player.X + player.Width, player.Y - aura, aura, player.Height + aura * 2),
-                    Color.DeepSkyBlue * 0.6f);
+                    Color.HotPink * 0.7f);
             }
 
             DrawParticles();
@@ -577,8 +577,8 @@ namespace FumoGame.Views
                 int py = viewH - lineH * (row + 1);
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(px - 4, py - 2, (int)sz.X + 8, (int)sz.Y + 4),
-                    Color.DarkBlue * 0.8f);
-                _spriteBatch.DrawString(_font, txt, new Vector2(px, py), Color.DeepSkyBlue);
+                    new Color(100, 0, 60) * 0.85f);
+                _spriteBatch.DrawString(_font, txt, new Vector2(px, py), Color.HotPink);
                 row++;
             }
 

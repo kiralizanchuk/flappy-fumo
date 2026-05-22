@@ -24,3 +24,9 @@
 /processor:SongProcessor
 /processorParam:Quality=Best
 /build:baka.mp3
+
+#begin gameplay.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:gameplay.mp3

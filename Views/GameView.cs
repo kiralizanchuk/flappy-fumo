@@ -22,6 +22,7 @@ namespace FumoGame.Views
         private Texture2D? _backgroundTexture;
         private List<Texture2D> _gameOverFrames = new();
         private Song? _music;
+        private Song? _gameplayMusic;
         private GameState _prevMusicState = GameState.Playing;
 
         private const float Gravity = 300f;
@@ -63,23 +64,44 @@ namespace FumoGame.Views
             }
 
             try { _music = content.Load<Song>("baka"); } catch { }
+            try { _gameplayMusic = content.Load<Song>("gameplay"); } catch { }
         }
 
         // --- Music ---
 
         public void UpdateMusic()
         {
-            if (_music == null) return;
-            bool shouldPlay = _model.State == GameState.GameOver;
-            bool wasPlaying = _prevMusicState == GameState.GameOver;
+            bool isGameOver = _model.State == GameState.GameOver;
+            bool wasGameOver = _prevMusicState == GameState.GameOver;
+            bool isPlaying = _model.State == GameState.Playing;
+            bool wasPlaying = _prevMusicState == GameState.Playing;
 
-            if (shouldPlay && !wasPlaying)
+            if (isGameOver && !wasGameOver)
             {
-                MediaPlayer.IsRepeating = true;
-                MediaPlayer.Play(_music);
+                MediaPlayer.Stop();
+                if (_music != null)
+                {
+                    MediaPlayer.IsRepeating = true;
+                    MediaPlayer.Play(_music);
+                }
             }
-            else if (!shouldPlay && wasPlaying)
+            else if (isPlaying && !wasPlaying)
             {
+                MediaPlayer.Stop();
+                if (_gameplayMusic != null)
+                {
+                    MediaPlayer.IsRepeating = true;
+                    MediaPlayer.Play(_gameplayMusic);
+                }
+            }
+            else if (!isGameOver && wasGameOver && !isPlaying)
+            {
+                // Перешли из GameOver в Menu — останавливаем музыку
+                MediaPlayer.Stop();
+            }
+            else if (!isPlaying && wasPlaying)
+            {
+                // Вышли из игры (проигрыш) — останавливаем gameplay музыку
                 MediaPlayer.Stop();
             }
 

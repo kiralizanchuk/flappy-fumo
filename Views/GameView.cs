@@ -443,6 +443,7 @@ namespace FumoGame.Views
                 {
                     if (_model.Score > _model.HighScore) _model.HighScore = _model.Score;
                     SaveScore(_model.Score);
+                    _model.DeathCount++;
                     _model.State = GameState.GameOver;
                 }
                 else
@@ -667,18 +668,20 @@ namespace FumoGame.Views
             // --- Кнопка выбора музыки ---
             bool unlocked = _model.DeathCount >= 3;
             var btnRect = GetMusicButtonRect();
-            var btnColor = unlocked ? new Color(60, 60, 120) : new Color(40, 40, 40);
-            var borderColor = unlocked ? new Color(120, 120, 255) : new Color(80, 80, 80);
+            var tiffany = new Color(10, 186, 181);
+            var btnColor    = unlocked ? tiffany                  : new Color(40, 40, 40);
+            var borderColor = unlocked ? new Color(180, 255, 252) : new Color(80, 80, 80);
             DrawRect(btnRect, btnColor);
             DrawRectBorder(btnRect, borderColor, 3);
             if (_font != null && unlocked)
             {
+                const int scale = 2;
                 string label = "САУНДТРЕК";
-                var size = _font.MeasureString(label);
+                var size = _font.MeasureString(label) * scale;
                 _spriteBatch.DrawString(_font, label,
-                    new Vector2(btnRect.X + (btnRect.Width - size.X) / 2,
+                    new Vector2(btnRect.X + (btnRect.Width  - size.X) / 2,
                                 btnRect.Y + (btnRect.Height - size.Y) / 2),
-                    Color.White);
+                    Color.White, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
             }
         }
 
@@ -1228,6 +1231,7 @@ namespace FumoGame.Views
                     {
                         if (_model.Score > _model.HighScore) _model.HighScore = _model.Score;
                         SaveScore(_model.Score);
+                        _model.DeathCount++;
                         _model.State = GameState.GameOver;
                         return;
                     }
@@ -1287,6 +1291,7 @@ namespace FumoGame.Views
                     {
                         if (_model.Score > _model.HighScore) _model.HighScore = _model.Score;
                         SaveScore(_model.Score);
+                        _model.DeathCount++;
                         _model.State = GameState.GameOver;
                         return;
                     }

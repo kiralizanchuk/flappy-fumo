@@ -67,7 +67,8 @@ namespace FumoGame.Views
         private const float JumpPower = -200f;
         private const double FrameDuration = 0.08;
         private const int PipeGap = 185;
-        private const int PlayerMargin = 5;
+        private const int PlayerMargin    = 5;
+        private const int PlayerTopMargin = 22; // обрезка хитбокса сверху
         private const int PipeMargin = 5;
 
         private const float PipeSpeed = 200f;
@@ -330,8 +331,8 @@ namespace FumoGame.Views
 
             // Сбор монет и бонусов
             var playerRect = new Rectangle(
-                player.X + PlayerMargin, player.Y + PlayerMargin,
-                player.Width - PlayerMargin * 2, player.Height - PlayerMargin * 2);
+                player.X + PlayerMargin, player.Y + PlayerTopMargin,
+                player.Width - PlayerMargin * 2, player.Height - PlayerTopMargin - PlayerMargin);
 
             foreach (var coin in _model.Coins)
             {
@@ -635,8 +636,8 @@ namespace FumoGame.Views
 
         private bool CheckCollision(PlayerModel player, PipeModel pipe, int screenHeight)
         {
-            var playerRect = new Rectangle(player.X + PlayerMargin, player.Y + PlayerMargin,
-                player.Width - PlayerMargin * 2, player.Height - PlayerMargin * 2);
+            var playerRect = new Rectangle(player.X + PlayerMargin, player.Y + PlayerTopMargin,
+                player.Width - PlayerMargin * 2, player.Height - PlayerTopMargin - PlayerMargin);
             var topRect = new Rectangle(pipe.X + PipeMargin, 0,
                 pipe.Width - PipeMargin * 2, pipe.TopHeight);
             var bottomRect = new Rectangle(pipe.X + PipeMargin, pipe.TopHeight + pipe.Gap,
@@ -1215,7 +1216,7 @@ namespace FumoGame.Views
             }
 
             // Коллизия с игроком
-            var playerRect = new Rectangle(player.X + 4, player.Y + 4, player.Width - 8, player.Height - 8);
+            var playerRect = new Rectangle(player.X + PlayerMargin, player.Y + PlayerTopMargin, player.Width - PlayerMargin * 2, player.Height - PlayerTopMargin - PlayerMargin);
             var bossRect   = new Rectangle((int)boss.X, (int)boss.Y, boss.Width, boss.Height);
             if (playerRect.Intersects(bossRect))
             {
@@ -1274,7 +1275,7 @@ namespace FumoGame.Views
                 { _model.Bullets.RemoveAt(i); continue; }
 
                 var bRect = new Rectangle((int)(b.X - b.Size / 2), (int)(b.Y - b.Size / 2), b.Size, b.Size);
-                var pRect = new Rectangle(player.X + 4, player.Y + 4, player.Width - 8, player.Height - 8);
+                var pRect = new Rectangle(player.X + PlayerMargin, player.Y + PlayerTopMargin, player.Width - PlayerMargin * 2, player.Height - PlayerTopMargin - PlayerMargin);
                 if (!bRect.Intersects(pRect)) continue;
 
                 if (_model.ShieldTimer > 0 && _shieldHitCooldown <= 0)

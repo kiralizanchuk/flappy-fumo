@@ -6,8 +6,8 @@ namespace FumoGame.Models
     {
         public int X { get; set; }
         public int Y { get; set; }
-        public int Width { get; set; } = 28;
-        public int Height { get; set; } = 28;
+        public int Width { get; set; } = 44;
+        public int Height { get; set; } = 44;
         public PowerUpType Type { get; set; }
         public bool Collected { get; set; }
 

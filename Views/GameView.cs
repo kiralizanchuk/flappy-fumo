@@ -67,9 +67,9 @@ namespace FumoGame.Views
             _pixelTexture = new Texture2D(_graphicsDevice, 1, 1);
             _pixelTexture.SetData(new[] { Color.White });
 
-            _coinTexture = CreateCircleTexture(14, Color.Gold);
-            _shieldTexture = CreateCircleTexture(14, Color.DeepSkyBlue);
-            _slowTexture = CreateCircleTexture(14, Color.LimeGreen);
+            _coinTexture = TryLoadTexture("coin.png") ?? CreateCircleTexture(14, Color.Gold);
+            _shieldTexture = TryLoadTexture("shield.png") ?? CreateCircleTexture(14, Color.DeepSkyBlue);
+            _slowTexture = TryLoadTexture("slow.png") ?? CreateCircleTexture(14, Color.LimeGreen);
 
             _playerTexture = TryLoadTexture("player.png");
             _pipeTexture = TryLoadTexture("pipe.png") ?? CreatePipeTexture();

@@ -45,3 +45,6 @@ packages/
 bin/
 obj/
 *.csproj.user
+
+# Claude Code
+.claude/

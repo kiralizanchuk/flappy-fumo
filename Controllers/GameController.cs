@@ -9,6 +9,7 @@ namespace FumoGame.Controllers
         private readonly GameModel _model;
         private readonly GameView _view;
         private KeyboardState _prev;
+        private bool _prevMouseDown;
 
         public GameController(GameModel model, GameView view)
         {
@@ -18,25 +19,27 @@ namespace FumoGame.Controllers
 
         public void HandleInput(KeyboardState kb, MouseState mouse)
         {
+            bool actionDown = kb.IsKeyDown(Keys.Space) || mouse.LeftButton == ButtonState.Pressed;
+            bool actionJustPressed = actionDown && !_prevMouseDown;
+
             if (kb.IsKeyDown(Keys.Tab) && !_prev.IsKeyDown(Keys.Tab))
                 _model.GodMode = !_model.GodMode;
-
-            _prev = kb;
-
-            bool actionPressed = kb.IsKeyDown(Keys.Space) || mouse.LeftButton == ButtonState.Pressed;
 
             switch (_model.State)
             {
                 case GameState.Menu:
-                    if (actionPressed) _view.StartNewGame();
+                    if (actionJustPressed) _view.StartNewGame();
                     break;
                 case GameState.Playing:
-                    if (actionPressed) _view.Jump();
+                    if (actionDown) _view.Jump();
                     break;
                 case GameState.GameOver:
-                    if (actionPressed) _view.GoToMenu();
+                    if (actionJustPressed) _view.GoToMenu();
                     break;
             }
+
+            _prev = kb;
+            _prevMouseDown = actionDown;
         }
     }
 }

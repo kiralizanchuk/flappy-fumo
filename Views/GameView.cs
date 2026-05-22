@@ -62,12 +62,7 @@ namespace FumoGame.Views
                 _gameOverFrames.Add(frame);
             }
 
-            try
-            {
-                string musicPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content", "baka.mp3");
-                _music = Song.FromUri("baka", new Uri(musicPath));
-            }
-            catch { }
+            try { _music = content.Load<Song>("baka"); } catch { }
         }
 
         // --- Music ---

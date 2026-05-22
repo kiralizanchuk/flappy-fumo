@@ -24,6 +24,8 @@ namespace FumoGame.Views
         private Texture2D _coinTexture = null!;
         private Texture2D _shieldTexture = null!;
         private Texture2D _slowTexture = null!;
+        private Texture2D _heartFullTexture = null!;
+        private Texture2D _heartEmptyTexture = null!;
         private List<Texture2D> _gameOverFrames = new();
         private Song? _music;
         private Song? _gameplayMusic;
@@ -66,6 +68,9 @@ namespace FumoGame.Views
 
             _pixelTexture = new Texture2D(_graphicsDevice, 1, 1);
             _pixelTexture.SetData(new[] { Color.White });
+
+            _heartFullTexture = CreateHeartTexture(32, Color.Red);
+            _heartEmptyTexture = CreateHeartTexture(32, new Color(70, 70, 70));
 
             _coinTexture = TryLoadTexture("coin.png") ?? CreateCircleTexture(14, Color.Gold);
             _shieldTexture = TryLoadTexture("shield.png") ?? CreateCircleTexture(14, Color.DeepSkyBlue);
@@ -530,41 +535,17 @@ namespace FumoGame.Views
 
         private void DrawHearts()
         {
-            int heartSize = 28;
-            int gap = 6;
+            int heartSize = 32;
+            int gap = 8;
             int total = 3;
             int startX = _graphicsDevice.Viewport.Width - (heartSize + gap) * total - 10;
-            int startY = 12;
+            int startY = 10;
 
             for (int i = 0; i < total; i++)
             {
                 int hx = startX + i * (heartSize + gap);
-                Color c = i < _model.Lives ? Color.Red : new Color(60, 60, 60);
-                // Рисуем сердце из кругов
-                DrawHeart(hx, startY, heartSize, c);
-            }
-        }
-
-        private void DrawHeart(int x, int y, int size, Color color)
-        {
-            int half = size / 2;
-            int q = size / 4;
-            // Верхние два круга
-            _spriteBatch.Draw(_coinTexture,
-                new Rectangle(x, y, half, half), color);
-            _spriteBatch.Draw(_coinTexture,
-                new Rectangle(x + half, y, half, half), color);
-            // Нижний ромб (треугольник через квадрат повёрнутый — упрощённо прямоугольник)
-            _spriteBatch.Draw(_pixelTexture,
-                new Rectangle(x, y + q, size, half), color);
-            // Нижний треугольник — рисуем убывающими полосками
-            for (int row = 0; row < half; row++)
-            {
-                int rowW = size - row * 2;
-                if (rowW <= 0) break;
-                int rowX = x + row;
-                int rowY = y + q + half + row;
-                _spriteBatch.Draw(_pixelTexture, new Rectangle(rowX, rowY, rowW, 1), color);
+                var tex = i < _model.Lives ? _heartFullTexture : _heartEmptyTexture;
+                _spriteBatch.Draw(tex, new Rectangle(hx, startY, heartSize, heartSize), Color.White);
             }
         }
 
@@ -750,6 +731,27 @@ namespace FumoGame.Views
             var tex = new Texture2D(_graphicsDevice, width, height);
             var data = new Color[width * height];
             Array.Fill(data, Color.ForestGreen);
+            tex.SetData(data);
+            return tex;
+        }
+
+        private Texture2D CreateHeartTexture(int size, Color color)
+        {
+            var tex = new Texture2D(_graphicsDevice, size, size);
+            var data = new Color[size * size];
+            for (int py = 0; py < size; py++)
+            {
+                for (int px = 0; px < size; px++)
+                {
+                    // Нормализуем в [-1.2, 1.2], y перевёрнут и сдвинут вниз
+                    float nx = ((float)px / size - 0.5f) * 2.4f;
+                    float ny = -((float)py / size - 0.55f) * 2.4f;
+                    // Уравнение сердца: (x²+y²-1)³ - x²y³ ≤ 0
+                    float v = nx * nx + ny * ny - 1f;
+                    bool inside = v * v * v - nx * nx * ny * ny * ny <= 0f;
+                    data[py * size + px] = inside ? color : Color.Transparent;
+                }
+            }
             tex.SetData(data);
             return tex;
         }

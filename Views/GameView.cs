@@ -691,23 +691,31 @@ namespace FumoGame.Views
                 return;
             }
 
-            // Рисуем картинку TOP 5 справа
-            int panelH = Math.Min(580, screenH - 60);
+            // Рисуем картинку TOP 5 справа (меньше + больший отступ, чтобы не обрезалась)
+            int panelH = Math.Min(460, screenH - 100);
             int panelW = (int)((float)_leaderboardTexture.Width / _leaderboardTexture.Height * panelH);
-            int panelX = screenW - panelW - 40;
+            int panelX = screenW - panelW - 120;
             int panelY = (screenH - panelH) / 2;
 
             _spriteBatch.Draw(_leaderboardTexture, new Rectangle(panelX, panelY, panelW, panelH), Color.White);
 
             if (_font == null) return;
 
-            // Пропорциональные Y-центры строк (относительно высоты панели, по анализу изображения 1024x1536)
-            float[] rowYFrac = { 0.230f, 0.367f, 0.503f, 0.639f, 0.775f };
+            // Y-центры строк (скорректировано по скриншоту: все +0.075 от предыдущих значений)
+            float[] rowYFrac = { 0.305f, 0.442f, 0.578f, 0.714f, 0.850f };
 
-            // X-позиция области с "000" (правая половина строки)
-            float coverStartXFrac = 0.44f;
-            float coverWFrac      = 0.45f;
-            float rowHFrac        = 0.108f;
+            // X: покрываем правую часть строки (где написано "000")
+            float coverStartXFrac = 0.40f;
+            float coverWFrac      = 0.52f;
+            float rowHFrac        = 0.130f;
+
+            // Скрываем 6-ю лишнюю строку (AI нарисовал 6 строк вместо 5)
+            int r6CenterY = panelY + (int)(0.932f * panelH);
+            int r6H       = (int)(rowHFrac * panelH);
+            _spriteBatch.Draw(_pixelTexture,
+                new Rectangle(panelX + (int)(0.09f * panelW), r6CenterY - r6H / 2,
+                              (int)(0.84f * panelW), r6H),
+                new Color(215, 232, 250));
 
             for (int i = 0; i < 5; i++)
             {
@@ -718,10 +726,10 @@ namespace FumoGame.Views
                 int coverW2    = (int)(coverWFrac * panelW);
                 int coverH     = (int)(rowHFrac * panelH);
 
-                // Перекрываем плейсхолдер "000" цветом строки
+                // Перекрываем "000" цветом соответствующей строки
                 Color rowBg = i % 2 == 0
-                    ? new Color(246, 251, 255)
-                    : new Color(220, 234, 250);
+                    ? new Color(248, 252, 255)
+                    : new Color(215, 232, 250);
                 _spriteBatch.Draw(_pixelTexture,
                     new Rectangle(coverX, rowCenterY - coverH / 2, coverW2, coverH), rowBg);
 

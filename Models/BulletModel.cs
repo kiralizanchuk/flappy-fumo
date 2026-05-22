@@ -6,6 +6,6 @@ namespace FumoGame.Models
         public float Y    { get; set; }
         public float VX   { get; set; }
         public float VY   { get; set; }
-        public int   Size { get; set; } = 14;
+        public int   Size { get; set; } = 8;
     }
 }

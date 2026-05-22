@@ -31,6 +31,6 @@ namespace FumoGame.Models
         // Босс
         public BossModel?      Boss          { get; set; }
         public List<BulletModel> Bullets     { get; set; } = new();
-        public int             NextBossScore { get; set; } = 10;
+        public int             NextBossScore { get; set; } = 40;
     }
 }

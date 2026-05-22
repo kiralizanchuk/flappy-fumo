@@ -70,8 +70,8 @@ namespace FumoGame.Views
         public void UpdateMusic()
         {
             if (_music == null) return;
-            bool shouldPlay = _model.State == GameState.Menu || _model.State == GameState.GameOver;
-            bool wasPlaying = _prevMusicState == GameState.Menu || _prevMusicState == GameState.GameOver;
+            bool shouldPlay = _model.State == GameState.GameOver;
+            bool wasPlaying = _prevMusicState == GameState.GameOver;
 
             if (shouldPlay && !wasPlaying)
             {

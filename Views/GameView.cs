@@ -284,7 +284,7 @@ namespace FumoGame.Views
             if ((_model.Boss == null || !_model.Boss.Active) && _model.Score >= _model.NextBossScore)
             {
                 SpawnBoss(viewH);
-                _model.NextBossScore += 10;
+                _model.NextBossScore += 60;
             }
             bool isInvincible = _model.GodMode || _model.InvincibilityTimer > 0 || _model.ShieldTimer > 0;
             if (_model.Boss?.Active == true)

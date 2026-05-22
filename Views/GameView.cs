@@ -755,10 +755,7 @@ namespace FumoGame.Views
             int texH = logH * scale;
 
             var border = Color.Black;
-            var highlight = new Color(
-                Math.Min(mainColor.R + 90, 255),
-                Math.Min(mainColor.G + 30, 255),
-                Math.Min(mainColor.B + 30, 255));
+            var highlight = Color.White;
 
             var tex = new Texture2D(_graphicsDevice, texW, texH);
             var data = new Color[texW * texH];

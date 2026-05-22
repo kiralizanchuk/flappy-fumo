@@ -185,7 +185,7 @@ namespace FumoGame.Views
                 if (!pipe.Scored && pipe.X + pipe.Width < player.X)
                 {
                     pipe.Scored = true;
-                    _model.Score += pipe.Type == PipeType.Narrow ? 3 : 1;
+                    _model.Score += 1;
                 }
             }
 
@@ -242,9 +242,6 @@ namespace FumoGame.Views
 
             int maxTop = viewH - PipeGap - 50;
             int normalTopHeight = Random.Shared.Next(50, Math.Max(51, maxTop));
-
-            if (roll < 65)
-                return new PipeModel(viewW, normalTopHeight, PipeGap, PipeType.Narrow);
 
             return new PipeModel(viewW, normalTopHeight, PipeGap);
         }
@@ -306,7 +303,6 @@ namespace FumoGame.Views
             Color tint = pipe.Type switch
             {
                 PipeType.Moving => Color.DodgerBlue,
-                PipeType.Narrow => Color.Gold,
                 _ => Color.White,
             };
 
@@ -322,15 +318,12 @@ namespace FumoGame.Views
                 Color fallback = pipe.Type switch
                 {
                     PipeType.Moving => Color.DodgerBlue,
-                    PipeType.Narrow => Color.Gold,
                     _ => Color.ForestGreen,
                 };
                 _spriteBatch.Draw(_pixelTexture, new Rectangle(pipe.X, 0, pipe.Width, pipe.TopHeight), fallback);
                 _spriteBatch.Draw(_pixelTexture, new Rectangle(pipe.X, bottomStart, pipe.Width, viewH - bottomStart), fallback);
             }
 
-            if (pipe.Type == PipeType.Narrow)
-                DrawTextCentered("+3", pipe.TopHeight + pipe.Gap / 2 - 14, Color.Gold, 1);
         }
 
         private void DrawTiledPipe(int x, int startY, int totalHeight, int width, SpriteEffects effects, Color tint = default)

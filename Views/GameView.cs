@@ -481,13 +481,12 @@ namespace FumoGame.Views
                 };
                 _spriteBatch.Draw(tex, new Rectangle(coin.X, coin.Y, coin.Width, coin.Height), Color.White);
 
-                // Подпись
-                if (_font != null)
+                // Подпись (только для монетки и щита)
+                if (_font != null && coin.Type != PowerUpType.Slow)
                 {
                     string label = coin.Type switch
                     {
                         PowerUpType.Shield => "S",
-                        PowerUpType.Slow => "~",
                         _ => "+3",
                     };
                     var sz = _font.MeasureString(label);

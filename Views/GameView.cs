@@ -671,15 +671,14 @@ namespace FumoGame.Views
             var borderColor = unlocked ? new Color(120, 120, 255) : new Color(80, 80, 80);
             DrawRect(btnRect, btnColor);
             DrawRectBorder(btnRect, borderColor, 3);
-            if (_font != null)
+            if (_font != null && unlocked)
             {
-                string label = unlocked ? "МУЗЫКА" : "МУЗЫКА [3 смерти]";
-                var textColor = unlocked ? Color.White : new Color(100, 100, 100);
+                string label = "САУНДТРЕК";
                 var size = _font.MeasureString(label);
                 _spriteBatch.DrawString(_font, label,
                     new Vector2(btnRect.X + (btnRect.Width - size.X) / 2,
                                 btnRect.Y + (btnRect.Height - size.Y) / 2),
-                    textColor);
+                    Color.White);
             }
         }
 

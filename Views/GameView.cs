@@ -1036,10 +1036,10 @@ namespace FumoGame.Views
 
         private Texture2D CurrentBossTex => (_bossIndex % 4) switch
         {
-            1 => _bossTex,
+            1 => _bossTex4,
             2 => _bossTex2,
             3 => _bossTex3,
-            _ => _bossTex4,
+            _ => _bossTex,
         };
 
         private void UpdateBoss(float dt, int viewH, bool isInvincible)

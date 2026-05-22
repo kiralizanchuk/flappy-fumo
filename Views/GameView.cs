@@ -35,6 +35,7 @@ namespace FumoGame.Views
         private Texture2D  _bossTex3    = null!;
         private Texture2D  _bossTex4    = null!;
         private Texture2D  _bossTex5    = null!;
+        private Texture2D  _bossTexYa   = null!;
         private Texture2D  _bulletTex   = null!;
         private int        _bossIndex   = 0;   // чередование боссов
         private Texture2D  _magnetTex   = null!;
@@ -120,6 +121,7 @@ namespace FumoGame.Views
             _bossTex3     = TryLoadTexture("boss3.png") ?? _bossTex;
             _bossTex4     = TryLoadTexture("boss4.png") ?? _bossTex;
             _bossTex5     = TryLoadTexture("boss5.png") ?? _bossTex;
+            _bossTexYa    = TryLoadTexture("boss_ya.png") ?? _bossTex;
             _bulletTex    = CreateCircleTexture(7, new Color(255, 210, 0));
             _magnetTex    = TryLoadTexture("magnet.png") ?? CreateCircleTexture(14, new Color(255, 80, 180));
             _leaderboardTexture = TryLoadTexture("leaderboard.png");
@@ -1047,7 +1049,7 @@ namespace FumoGame.Views
                     2 => _bossTex2,  // 120 — котик с языком
                     3 => _bossTex3,  // 180 — свинья
                     4 => _bossTex5,  // 240 — фото
-                    5 => _bossTex,   // 300 — котик в шляпе
+                    5 => _bossTexYa, // 300 — я
                     _ => _bossTex,   // 360+ — котик в шляпе навсегда
                 };
             }

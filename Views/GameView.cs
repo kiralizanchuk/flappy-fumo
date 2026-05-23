@@ -668,6 +668,9 @@ namespace FumoGame.Views
 
             DrawTextCentered("ПРОБЕЛ или клик - начать игру", h / 2 + 100, Color.White, 1);
 
+            if (_model.DeathCount > 0)
+                DrawTextCentered($"смертей: {_model.DeathCount}", h / 2 + 145, new Color(200, 80, 80), 1);
+
             // --- Кнопка выбора музыки ---
             bool unlocked = _model.DeathCount >= 3;
             var btnRect = GetMusicButtonRect();

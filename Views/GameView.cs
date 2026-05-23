@@ -41,6 +41,8 @@ namespace FumoGame.Views
         private Texture2D  _magnetTex   = null!;
         private float      _shakeTimer  = 0f;
         private float      _shakeAmount = 0f;
+        private float      _scorePulse  = 0f;   // анимация счёта
+        private int        _lastScore   = 0;
         private List<Texture2D> _gameOverFrames = new();
 
         // --- Частицы ---
@@ -262,6 +264,10 @@ namespace FumoGame.Views
             if (_model.MagnetTimer > 0)        _model.MagnetTimer        -= dt;
             if (_model.DashCooldown > 0)       _model.DashCooldown       -= dt;
             if (_shieldHitCooldown > 0)        _shieldHitCooldown        -= dt;
+            if (_scorePulse > 0)               _scorePulse               -= dt;
+
+            // Запускаем пульс при изменении счёта
+            if (_model.Score != _lastScore) { _scorePulse = 0.2f; _lastScore = _model.Score; }
             if (_shakeTimer > 0)               _shakeTimer               -= dt;
 
             // Рывок — старт
@@ -873,7 +879,17 @@ namespace FumoGame.Views
                     new Rectangle(player.X + player.Width, player.Y - ring, ring, player.Height + ring * 2), mc);
             }
 
-            DrawTextCentered($"Счет: {_model.Score}", 20, Color.White, 1);
+            // Анимация счёта — пульсирует при получении очка
+            if (_font != null)
+            {
+                string scoreText = $"Счет: {_model.Score}";
+                float pulse = _scorePulse > 0 ? 1f + 0.6f * (_scorePulse / 0.2f) : 1f;
+                var sz = _font.MeasureString(scoreText) * pulse;
+                float sx = (_graphicsDevice.Viewport.Width - sz.X) / 2f;
+                float sy = 20f - (sz.Y - _font.MeasureString(scoreText).Y) / 2f;
+                _spriteBatch.DrawString(_font, scoreText, new Vector2(sx, sy),
+                    Color.White, 0, Vector2.Zero, pulse, SpriteEffects.None, 0);
+            }
 
             // Сердечки (жизни) — правый верхний угол
             DrawHearts();

@@ -1,4 +1,4 @@
-# Flappy Fumo
+# Flappy Fumo !!
 
 Игра в стиле Flappy Bird на MonoGame + C# с MVC архитектурой.
 

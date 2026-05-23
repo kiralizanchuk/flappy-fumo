@@ -59,7 +59,6 @@ namespace FumoGame.Views
         private readonly (string Key, string Label)[] _musicTracks =
         {
             ("gameplay",   "а может просто негром стать..."),
-            ("baka",       "Baka Mitai"),
             ("pulsewidth", "Aphex Twin - Pulsewidth"),
         };
         private Song?[] _allSongs = Array.Empty<Song?>();

@@ -60,6 +60,7 @@ namespace FumoGame.Views
         {
             ("gameplay",   "а может просто негром стать..."),
             ("pulsewidth", "Aphex Twin - Pulsewidth"),
+            ("freebird",   "Lynyrd Skynyrd - Free Bird"),
         };
         private Song?[] _allSongs = Array.Empty<Song?>();
 

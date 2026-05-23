@@ -675,10 +675,10 @@ namespace FumoGame.Views
             DrawTextCentered("ПРОБЕЛ или клик - начать игру", h / 2 + 100, Color.White, 1);
 
             if (_model.HighScore > 0)
-                DrawTextCentered($"рекорд: {_model.HighScore}", h / 2 + 145, Color.Gold, 1);
+                DrawTextCentered($"рекорд: {_model.HighScore}", h / 2 + 140, Color.Gold, 1);
 
             if (_model.DeathCount > 0)
-                DrawTextCentered($"смертей: {_model.DeathCount}", h / 2 + 175, new Color(200, 80, 80), 1);
+                DrawTextCentered($"смертей: {_model.DeathCount}", h / 2 + 165, new Color(200, 80, 80), 1);
 
             // --- Кнопка выбора музыки ---
             bool unlocked = _model.DeathCount >= 3;
@@ -705,7 +705,7 @@ namespace FumoGame.Views
             int w = _graphicsDevice.Viewport.Width;
             int h = _graphicsDevice.Viewport.Height;
             int btnW = 280; int btnH = 60;
-            return new Rectangle(w / 2 - btnW / 2, h / 2 + 180, btnW, btnH);
+            return new Rectangle(w / 2 - btnW / 2, h / 2 + 210, btnW, btnH);
         }
 
         public void HandleMenuClick(int mx, int my)

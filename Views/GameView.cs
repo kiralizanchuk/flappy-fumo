@@ -727,7 +727,7 @@ namespace FumoGame.Views
                 DrawRectBorder(rect, border, 3);
                 if (_font != null)
                 {
-                    string label = (selected ? "▶ " : "   ") + _musicTracks[i].Label;
+                    string label = (selected ? "> " : "  ") + _musicTracks[i].Label;
                     var sz = _font.MeasureString(label);
                     _spriteBatch.DrawString(_font, label,
                         new Vector2(rect.X + (rect.Width - sz.X) / 2, rect.Y + (rect.Height - sz.Y) / 2),

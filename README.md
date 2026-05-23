@@ -48,11 +48,38 @@ dotnet test FumoGame.Tests/
 
 ## Структура кода
 
+Проект построен на паттерне **MVC**:
+
 ```
 FumoGame/
-├── Models/          # Данные (позиции, счёт, состояние)
-├── Views/           # Логика, физика, отрисовка
-├── Controllers/     # Ввод с клавиатуры и мыши
-├── Content/         # Спрайты, шрифт, музыка
-└── Program.cs
+├── Models/
+│   ├── GameModel.cs       # Состояние игры: счёт, жизни, таймеры, списки объектов
+│   ├── PlayerModel.cs     # Позиция, размер, скорость игрока
+│   ├── PipeModel.cs       # Труба: позиция, тип (Normal/Moving/Narrow), зазор
+│   ├── CoinModel.cs       # Бонус: тип (Coin/Shield/Slow/Heart/Magnet), позиция
+│   ├── BossModel.cs       # Босс: позиция, таймеры жизни и стрельбы
+│   └── BulletModel.cs     # Снаряд босса: позиция, скорость
+│
+├── Views/
+│   └── GameView.cs        # Вся игровая логика, физика, коллизии, отрисовка
+│
+├── Controllers/
+│   └── GameController.cs  # Только ввод: клавиатура, мышь, передача команд во View
+│
+├── Helpers/
+│   └── CollisionHelper.cs # Чистая логика коллизий, вынесена для тестирования
+│
+├── FumoGame.Tests/        # Модульные тесты (xUnit, 33 теста)
+│   ├── GameModelTests.cs
+│   ├── PlayerModelTests.cs
+│   ├── CollisionTests.cs
+│   └── BossTests.cs
+│
+├── Content/               # Спрайты, музыка, шрифт (компилируется MonoGame)
+└── Program.cs             # Точка входа, создаёт Model + View + Controller
 ```
+
+- **Models** — только данные, никакой логики
+- **Views** — физика, коллизии, спавн объектов, анимация, отрисовка
+- **Controllers** — читают ввод, вызывают методы View, не содержат логики
+- **Helpers** — вспомогательные классы с чистыми функциями (без зависимостей от MonoGame GraphicsDevice)

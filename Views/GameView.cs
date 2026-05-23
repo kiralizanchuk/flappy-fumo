@@ -428,6 +428,8 @@ namespace FumoGame.Views
                             if (_model.Score > _model.HighScore) _model.HighScore = _model.Score;
                             SaveScore(_model.Score);
                             _model.DeathCount++;
+                            _model.GhostX = _model.Player.X;
+                            _model.GhostY = _model.Player.Y;
                             _model.State = GameState.GameOver;
                             return;
                         }
@@ -824,6 +826,17 @@ namespace FumoGame.Views
                 }
                 _spriteBatch.Draw(tex, new Rectangle(coin.X, coin.Y, coin.Width, coin.Height), Color.White);
 
+            }
+
+            // Призрак — силуэт места прошлой смерти
+            if (_model.GhostY >= 0 && _playerTexture != null)
+            {
+                float gsx = (float)_model.Player.Width  / _playerTexture.Width;
+                float gsy = (float)_model.Player.Height / _playerTexture.Height;
+                _spriteBatch.Draw(_playerTexture,
+                    new Vector2(_model.GhostX, _model.GhostY),
+                    null, Color.White * 0.28f, 0, Vector2.Zero,
+                    new Vector2(gsx, gsy), SpriteEffects.None, 0);
             }
 
             // Игрок (мигает при неуязвимости)

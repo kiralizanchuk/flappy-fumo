@@ -151,9 +151,18 @@ namespace FumoGame.Views
             try { _gameplayMusic = content.Load<Song>("gameplay"); } catch { }
 
             _allSongs = new Song?[_musicTracks.Length];
+            string contentDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content");
             for (int i = 0; i < _musicTracks.Length; i++)
             {
-                try { _allSongs[i] = content.Load<Song>(_musicTracks[i].Key); } catch { }
+                string mp3Path = Path.Combine(contentDir, _musicTracks[i].Key + ".mp3");
+                try
+                {
+                    if (File.Exists(mp3Path))
+                        _allSongs[i] = Song.FromUri(_musicTracks[i].Key, new Uri(mp3Path));
+                    else
+                        _allSongs[i] = content.Load<Song>(_musicTracks[i].Key);
+                }
+                catch { }
             }
 
             _scoresPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scores.txt");

@@ -30,3 +30,21 @@
 /processor:SongProcessor
 /processorParam:Quality=Best
 /build:gameplay.mp3
+
+#begin pulsewidth.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:pulsewidth.mp3
+
+#begin freebird.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:freebird.mp3
+
+#begin xtal.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:xtal.mp3

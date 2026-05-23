@@ -58,7 +58,7 @@ namespace FumoGame.Views
         // Выбор музыки
         private readonly (string Key, string Label)[] _musicTracks =
         {
-            ("gameplay",   "Gameplay"),
+            ("gameplay",   "а может просто негром стать..."),
             ("baka",       "Baka Mitai"),
             ("pulsewidth", "Aphex Twin - Pulsewidth"),
         };

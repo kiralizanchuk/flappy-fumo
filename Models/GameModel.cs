@@ -38,9 +38,6 @@ namespace FumoGame.Models
         public int DeathCount          { get; set; } = 0;
         public int SelectedMusicTrack  { get; set; } = 0;
 
-        // Призрак — позиция последней смерти
-        public int GhostX { get; set; } = -1;
-        public int GhostY { get; set; } = -1;
 
         // Босс
         public BossModel?      Boss          { get; set; }

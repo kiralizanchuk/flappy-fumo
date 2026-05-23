@@ -574,8 +574,8 @@ namespace FumoGame.Views
             {
                 // Щит чуть левее (игрок встретит его первым, потом магнит, потом трубы)
                 if (!shieldPending && _model.ShieldTimer <= 0)
-                    _model.Coins.Add(new CoinModel(coinX - 180, viewH / 2 - 22, PowerUpType.Shield));
-                _model.Coins.Add(new CoinModel(coinX, viewH / 2 - 22, PowerUpType.Magnet));
+                    _model.Coins.Add(new CoinModel(coinX - 180, gapMid, PowerUpType.Shield));
+                _model.Coins.Add(new CoinModel(coinX, gapMid, PowerUpType.Magnet));
                 return;
             }
 
